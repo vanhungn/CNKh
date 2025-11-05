@@ -1,3 +1,4 @@
+require('dotenv').config()
 const Lapcode = async (req, res) => {
     try {
         const { script, language = "cpp17", versionIndex = "0" } = req.body;
@@ -6,8 +7,8 @@ const Lapcode = async (req, res) => {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                clientId: "7acae6a7daab8887727220a43f404e26",
-                clientSecret: "69749431c19a21d3629d8a50f3cb1ca353d0a3d98ce1f3093aad63dc9d5bf43d",
+                clientId: process.env.CLIENT_ID,
+                clientSecret: process.env.CLIENT_SECRET,
                 script,
                 language,
                 versionIndex
