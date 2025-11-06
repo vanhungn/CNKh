@@ -1,7 +1,7 @@
 require('dotenv').config()
 const Lapcode = async (req, res) => {
     try {
-        const { script, language = "cpp17", versionIndex = "0" } = req.body;
+        const { script, language = "cpp17", versionIndex = "0",stdin} = req.body;
 
         const response = await fetch("https://api.jdoodle.com/v1/execute", {
             method: "POST",
@@ -11,7 +11,8 @@ const Lapcode = async (req, res) => {
                 clientSecret: process.env.CLIENT_SECRET,
                 script,
                 language,
-                versionIndex
+                versionIndex,
+                stdin
             }),
         });
 
