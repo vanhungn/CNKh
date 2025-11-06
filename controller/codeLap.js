@@ -1,31 +1,39 @@
-require('dotenv').config()
+// Không cần dotenv nữa
+
+
 const Lapcode = async (req, res) => {
     try {
-        const { script, language = "cpp17", versionIndex = "0",stdin} = req.body;
+        const { script, language = "cpp", stdin = "" } = req.body;
 
-        const response = await fetch("https://api.jdoodle.com/v1/execute", {
+        // ✅ Gửi request tới Piston API
+        const response = await fetch("https://emkc.org/api/v2/piston/execute", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                clientId: process.env.CLIENT_ID,
-                clientSecret: process.env.CLIENT_SECRET,
-                script,
-                language,
-                versionIndex,
-                stdin
+                language, // ví dụ: "cpp", "python", "javascript"
+                version: "*", // lấy version mới nhất
+                files: [
+                    {
+                        name: "main",
+                        content: script, // code người dùng nhập
+                    },
+                ],
+                stdin, // dữ liệu đầu vào
             }),
         });
 
-        // ✅ Parse JSON từ JDoodle
         const data = await response.json();
-
+        console.log(data)
         return res.status(200).json({
-            result: data   // JDoodle trả về { output, memory, cpuTime, ... }
+            success: true,
+            result: data, // kết quả thực thi: output, stderr, exit_code, ...
         });
     } catch (error) {
-        console.error("JDoodle API error:", error);
+        console.error("Piston API error:", error);
         return res.status(500).json({
-            error: error.message || "Internal Server Error",
+            success: false,
+            message: "Lỗi khi chạy code",
+            error: error.message,
         });
     }
 };
