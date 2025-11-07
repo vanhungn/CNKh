@@ -11,7 +11,7 @@ var app = express();
 
 db()
 app.use(cors({
-  origin: 'http://localhost:5174', // hoặc '*' nếu không dùng credentials
+  origin: 'http://localhost:5173', // hoặc '*' nếu không dùng credentials
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
