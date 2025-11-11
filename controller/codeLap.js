@@ -60,8 +60,10 @@ const CreatePractice = async (req, res) => {
 const GetProblem = async(req,res) => {
     try {
         const search = req.query.search||""
+        const typeOf = req.query.typeOf
         const data = await modalProblem.aggregate([
             {$match:{
+                ...(typeOf&&{typeOf}),
                 $or:[
                     {title:{$regex:search}}
                 ]
