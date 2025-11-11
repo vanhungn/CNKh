@@ -57,17 +57,19 @@ const CreatePractice = async (req, res) => {
         })
     }
 }
-const GetProblem = async(req,res) => {
+const GetProblem = async (req, res) => {
     try {
-        const search = req.query.search||""
+        const search = req.query.search || ""
         const typeOf = req.query.typeOf
         const data = await modalProblem.aggregate([
-            {$match:{
-                ...(typeOf&&{typeOf}),
-                $or:[
-                    {title:{$regex:search}}
-                ]
-            }}
+            {
+                $match: {
+                    ...(typeOf && { typeOf }),
+                    $or: [
+                        { title: { $regex: search } }
+                    ]
+                }
+            }
         ])
         return res.status(200).json({
             data
@@ -78,4 +80,20 @@ const GetProblem = async(req,res) => {
         })
     }
 }
-module.exports = { Lapcode, CreatePractice,GetProblem };
+const GetProblemDetail = async (req, res) => {
+    try {
+        const _id = req.params
+        if (!_id) {
+            return res.status(400).json({
+                message: "not valid"
+            })
+        }
+        const data = await modalProblem.findById(_id)
+        return res.status(200).json({ data })
+    } catch (error) {
+        return res.status(500).json({
+            error
+        })
+    }
+}
+module.exports = { Lapcode, CreatePractice, GetProblem, GetProblemDetail };
