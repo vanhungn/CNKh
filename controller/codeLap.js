@@ -1,5 +1,5 @@
 // Không cần dotenv nữa
-
+const modalProblem = require('../modal/problem')
 
 const Lapcode = async (req, res) => {
     try {
@@ -37,5 +37,43 @@ const Lapcode = async (req, res) => {
         });
     }
 };
-
-module.exports = { Lapcode };
+const CreatePractice = async (req, res) => {
+    try {
+        const { typeOf, title, statement, input, output, suggest } = req.body
+        if (!title || !typeOf || !statement || !input || !output || !suggest) {
+            return res.status(400).json({
+                message: "not valid"
+            })
+        }
+        const data = await modalProblem.create({
+            title, typeOf, statement, input, output, suggest
+        })
+        return res.status(200).json({
+            data
+        })
+    } catch (error) {
+        return res.status(500).json({
+            message: error
+        })
+    }
+}
+const GetProblem = async(req,res) => {
+    try {
+        const search = req.query.search||""
+        const data = await modalProblem.aggregate([
+            {$match:{
+                $or:[
+                    {title:{$regex:search}}
+                ]
+            }}
+        ])
+        return res.status(200).json({
+            data
+        })
+    } catch (error) {
+        return res.status(500).json({
+            message: error
+        })
+    }
+}
+module.exports = { Lapcode, CreatePractice,GetProblem };
