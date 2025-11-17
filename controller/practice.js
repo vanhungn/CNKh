@@ -35,7 +35,9 @@ const GetTheoryChapter = async (req, res) => {
             data
         })
     } catch (error) {
+        console.log('ksdhjh')
         return res.status(500).json({
+            
             message: error.message,
             stack: error.stack
         });
