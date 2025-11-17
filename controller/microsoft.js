@@ -28,7 +28,10 @@ const MicrosoftLogin = async (req, res) => {
         })
     } catch (error) {
         return res.status(500).json({
-            message: error
+            error: 'Internal server error',
+            message: error.message,
+            // ⚠️ Chỉ hiển thị detail trong dev
+            ...(process.env.NODE_ENV !== 'production' && { detail: error.stack })
         })
     }
 }
