@@ -2,7 +2,7 @@ const modalTheory = require('../modal/thoery')
 const mammoth = require('mammoth');
 const { Document, Packer, Paragraph, TextRun } = require('docx');
 const cloudinary = require("cloudinary").v2;
-
+const modalDocument = require('../modal/document')
 // Cấu hình Cloudinary
 cloudinary.config({
     cloud_name: "djybyg1o3",
@@ -37,10 +37,13 @@ const CreateFile = async (req, res) => {
                 uploadStream.end(file.buffer);
             }))
         );
-
+        await modalDocument.create({
+            name: uploadedFiles[0].name,
+            url: uploadedFiles[0].url
+        })
         return res.status(200).json({
             message: "Upload successfully",
-            files: uploadedFiles
+
         });
 
     } catch (error) {
