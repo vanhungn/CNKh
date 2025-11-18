@@ -16,7 +16,7 @@ const upload2 = multer({
     }
 });
 router.get('/export/:_id', document.ExportDocument)
-router.get('/title_course/:code',document.GetNameDocument)
+router.get('/',document.GetNameDocument)
 router.get('/detail/:_id',document.GetDocumentDetail)
 router.post('/create', upload.array("file", 10), document.CreateFile)
 router.post('/import/:_id', upload2.single('file'), document.ImportDocument);

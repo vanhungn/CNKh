@@ -40,9 +40,8 @@ const CreateFile = async (req, res) => {
             }))
         );
         await modalDocument.create({
-            name: uploadedFiles[0].name,
-            url: uploadedFiles[0].url,
-            course, codeCourse
+            course, codeCourse,
+            docx: uploadedFiles
 
         })
         return res.status(200).json({
@@ -57,20 +56,25 @@ const CreateFile = async (req, res) => {
 };
 const GetNameDocument = async (req, res) => {
     try {
-        const { code } = req.params
-        if (!code) {
-            return res.status(400).json({
-                message: "valid"
-            })
+        const skip = req.query.skip || 1
+        const limit = req.query.limit || 10
+        const search = req.query.search||""
+        const query = {
+            $match: {
+                $or: [
+                    { course: { $regex: search , $options:"i"} }
+                ]
+            }
         }
-        const title = await modalDocument.find({ codeCourse: code })
-        console.log(title)
-        const data = []
-        title.forEach((e) => {
-            data.push({ name: e.name, _id: e._id })
-        })
+        const title = await modalDocument.aggregate([
+            query,
+            {$skip:((skip-1) * limit)},
+            {$limit:limit}
+        ])
+        const totalPage =  await modalDocument.aggregate([query])
+        const total = Math.ceil(totalPage.length / limit)
         return res.status(200).json({
-            data
+            data: title, total
         })
     } catch (error) {
         return res.status(500).json({
@@ -87,7 +91,7 @@ const GetDocumentDetail = async (req, res) => {
             })
         }
         const data = await modalDocument.findById(_id)
-        return res.status(200).json({data})
+        return res.status(200).json({ data })
     } catch (error) {
         return res.status(500).json({ error })
     }
@@ -330,4 +334,4 @@ const ImportDocument = async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 };
-module.exports = {GetDocumentDetail, GetNameDocument, CreateFile, ExportDocument, ImportDocument };
+module.exports = { GetDocumentDetail, GetNameDocument, CreateFile, ExportDocument, ImportDocument };
