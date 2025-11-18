@@ -58,20 +58,20 @@ const GetNameDocument = async (req, res) => {
     try {
         const skip = req.query.skip || 1
         const limit = req.query.limit || 10
-        const search = req.query.search||""
+        const search = req.query.search || ""
         const query = {
             $match: {
                 $or: [
-                    { course: { $regex: search , $options:"i"} }
+                    { course: { $regex: search, $options: "i" } }
                 ]
             }
         }
         const title = await modalDocument.aggregate([
             query,
-            {$skip:((skip-1) * limit)},
-            {$limit:limit}
+            { $skip: ((skip - 1) * limit) },
+            { $limit: limit }
         ])
-        const totalPage =  await modalDocument.aggregate([query])
+        const totalPage = await modalDocument.aggregate([query])
         const total = Math.ceil(totalPage.length / limit)
         return res.status(200).json({
             data: title, total
@@ -80,6 +80,28 @@ const GetNameDocument = async (req, res) => {
         return res.status(500).json({
             error
         })
+    }
+}
+const GetDocumentCourse = async(req, res) => {
+    try {
+        const { _idCourse, _idDocx } = req.params;
+        
+        if (!_idCourse || !_idDocx) {
+            return res.status(400).json({ message: "Missing parameters" });
+        }
+
+        const course = await modalDocument.findById(_idCourse);
+        
+        if (!course) {
+            return res.status(404).json({ message: "Course not found" });
+        }
+
+        const data = course.docx.find(doc => doc._id.toString() === _idDocx);
+        
+        return res.status(200).json({ data });
+
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
     }
 }
 const GetDocumentDetail = async (req, res) => {
@@ -96,6 +118,7 @@ const GetDocumentDetail = async (req, res) => {
         return res.status(500).json({ error })
     }
 }
+
 const ExportDocument = async (req, res) => {
     try {
         const { _id } = req.params;
@@ -334,4 +357,4 @@ const ImportDocument = async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 };
-module.exports = { GetDocumentDetail, GetNameDocument, CreateFile, ExportDocument, ImportDocument };
+module.exports = {GetDocumentCourse, GetDocumentDetail, GetNameDocument, CreateFile, ExportDocument, ImportDocument };
