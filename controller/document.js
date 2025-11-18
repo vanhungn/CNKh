@@ -1,4 +1,5 @@
 const modalTheory = require('../modal/thoery')
+const mammoth = require('mammoth');
 const { Document, Packer, Paragraph, TextRun } = require('docx');
 const cloudinary = require("cloudinary").v2;
 
@@ -172,4 +173,117 @@ const ExportDocument = async (req, res) => {
         }
     }
 };
-module.exports = { CreateFile, ExportDocument };
+function parseWordContent(text) {
+    const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+    const questions = [];
+    let currentQuestion = null;
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        // Bỏ qua tiêu đề và separator
+        if (line.startsWith('DE THI CHUONG') || line.startsWith('===') || line.startsWith('---')) {
+            continue;
+        }
+
+        // Phát hiện câu hỏi mới: "Cau 1: ..."
+        const questionMatch = line.match(/^Cau\s+(\d+):\s*(.+)$/i);
+        if (questionMatch) {
+            // Lưu câu hỏi trước đó (nếu có)
+            if (currentQuestion && currentQuestion.options.length > 0) {
+                questions.push(currentQuestion);
+            }
+
+            // Tạo câu hỏi mới
+            currentQuestion = {
+                question: questionMatch[2].trim(),
+                imgUrl: '',
+                options: [],
+                answer: ''
+            };
+            continue;
+        }
+
+        // Phát hiện hình ảnh: "[Hinh anh: ...]"
+        if (line.startsWith('[Hinh anh:')) {
+            const imgMatch = line.match(/\[Hinh anh:\s*(.+?)\]/i);
+            if (imgMatch && currentQuestion) {
+                currentQuestion.imgUrl = imgMatch[1].trim();
+            }
+            continue;
+        }
+
+        // Phát hiện đáp án: "A. ...", "B. ...", etc
+        const optionMatch = line.match(/^([A-D])\.\s*(.+)$/i);
+        if (optionMatch && currentQuestion) {
+            currentQuestion.options.push({
+                key: optionMatch[1].toUpperCase(),
+                text: optionMatch[2].trim()
+            });
+            continue;
+        }
+
+        // Phát hiện đáp án đúng: "Dap an dung: A"
+        const answerMatch = line.match(/^Dap an dung:\s*([A-D])$/i);
+        if (answerMatch && currentQuestion) {
+            currentQuestion.answer = answerMatch[1].toUpperCase();
+            continue;
+        }
+    }
+
+    // Lưu câu hỏi cuối cùng
+    if (currentQuestion && currentQuestion.options.length > 0) {
+        questions.push(currentQuestion);
+    }
+
+    return questions;
+}
+const ImportDocument = async (req, res) => {
+    try {
+        console.log(req.file)
+        if (!req.file) {
+            return res.status(400).json({ message: "Khong co file nao duoc upload" });
+        }
+
+        const { _id } = req.params; // ID của document cần update
+
+        // Đọc file Word từ buffer
+        const result = await mammoth.extractRawText({
+            buffer: req.file.buffer
+        });
+
+        const text = result.value;
+        console.log('Noi dung file:', text);
+
+        // Parse text thành cấu trúc câu hỏi
+        const parsedQuestions = parseWordContent(text);
+
+        if (parsedQuestions.length === 0) {
+            return res.status(400).json({
+                message: "Khong doc duoc cau hoi tu file. Kiem tra dinh dang!"
+            });
+        }
+
+        // Cập nhật database
+        const updatedDoc = await modalTheory.findByIdAndUpdate(
+            _id,
+            { list: parsedQuestions },
+            { new: true }
+        );
+
+        if (!updatedDoc) {
+            return res.status(404).json({ message: "Khong tim thay document" });
+        }
+
+        return res.status(200).json({
+            message: "Import thanh cong",
+            totalQuestions: parsedQuestions.length,
+            data: updatedDoc
+        });
+
+    } catch (error) {
+        console.error('Import error:', error);
+        return res.status(500).json({ error: error.message });
+    }
+};
+module.exports = { CreateFile, ExportDocument, ImportDocument };
