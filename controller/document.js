@@ -13,7 +13,9 @@ cloudinary.config({
 
 const CreateFile = async (req, res) => {
     try {
+
         const files = req.files;
+        const { course, codeCourse } = req.body
         if (!files || files.length === 0) return res.status(400).json({ message: "No files uploaded" });
 
         const uploadedFiles = await Promise.all(
@@ -39,7 +41,9 @@ const CreateFile = async (req, res) => {
         );
         await modalDocument.create({
             name: uploadedFiles[0].name,
-            url: uploadedFiles[0].url
+            url: uploadedFiles[0].url,
+            course, codeCourse
+
         })
         return res.status(200).json({
             message: "Upload successfully",
@@ -51,6 +55,43 @@ const CreateFile = async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 };
+const GetNameDocument = async (req, res) => {
+    try {
+        const { code } = req.params
+        if (!code) {
+            return res.status(400).json({
+                message: "valid"
+            })
+        }
+        const title = await modalDocument.find({ codeCourse: code })
+        console.log(title)
+        const data = []
+        title.forEach((e) => {
+            data.push({ name: e.name, _id: e._id })
+        })
+        return res.status(200).json({
+            data
+        })
+    } catch (error) {
+        return res.status(500).json({
+            error
+        })
+    }
+}
+const GetDocumentDetail = async (req, res) => {
+    try {
+        const { _id } = req.params
+        if (!_id) {
+            return res.status(400).json({
+                message: "valid"
+            })
+        }
+        const data = await modalDocument.findById(_id)
+        return res.status(200).json({data})
+    } catch (error) {
+        return res.status(500).json({ error })
+    }
+}
 const ExportDocument = async (req, res) => {
     try {
         const { _id } = req.params;
@@ -289,4 +330,4 @@ const ImportDocument = async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 };
-module.exports = { CreateFile, ExportDocument, ImportDocument };
+module.exports = {GetDocumentDetail, GetNameDocument, CreateFile, ExportDocument, ImportDocument };
