@@ -8,6 +8,7 @@ var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 const problemRouter = require('./routes/problems')
 const theoryRouter = require('./routes/theory')
+const document = require('./routes/document')
 const db = require('./config/db')
 var app = express();
 
@@ -28,11 +29,12 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-
+app.use('/public', express.static('public'));
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/problem', problemRouter);
-app.use('/theory', theoryRouter)
+app.use('/theory', theoryRouter);
+app.use('/document', document)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
