@@ -353,7 +353,7 @@ const GetListDocument = async (req, res) => {
         const query = {
             $match: {
                 $or: [
-                    { 'docx.name': { $regex: search, $options: 'i' } }
+                    { course: { $regex: search, $options: 'i' } }
                 ]
             }
         }
