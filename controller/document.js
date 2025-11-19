@@ -21,14 +21,25 @@ const CreateFile = async (req, res) => {
         const uploadedFiles = await Promise.all(
             files.map(file => new Promise((resolve, reject) => {
                 // Giữ tên file gốc và đuôi
-                const originalName = file.originalname.split(".")[0];
-                const extension = file.originalname.split(".").pop();
+                const originalName = file.originalname;
+                const nameWithoutExt = originalName.substring(0, originalName.lastIndexOf('.'));
+                const extension = originalName.substring(originalName.lastIndexOf('.') + 1);
+
+                // QUAN TRỌNG: Loại bỏ dấu tiếng Việt và ký tự đặc biệt
+                const sanitizedName = nameWithoutExt
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '') // Bỏ dấu
+                    .replace(/đ/g, 'd').replace(/Đ/g, 'D') // Đổi đ thành d
+                    .replace(/[^a-zA-Z0-9-_]/g, '_') // Thay ký tự đặc biệt bằng _
+                    .toLowerCase();
+
+                const publicId = `${sanitizedName}-${Date.now()}`;
 
                 const uploadStream = cloudinary.uploader.upload_stream(
                     {
-                        resource_type: "raw", // raw cho Word/Excel/PPT
-                        public_id: `${originalName}-${Date.now()}`, // tên file giữ gốc
-                        format: extension // bắt buộc giữ đuôi
+                        resource_type: "raw",
+                        public_id: publicId,
+                        format: extension
                     },
                     (err, result) => {
                         console.log(file)
