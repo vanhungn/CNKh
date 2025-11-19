@@ -31,8 +31,9 @@ const CreateFile = async (req, res) => {
                         format: extension // bắt buộc giữ đuôi
                     },
                     (err, result) => {
+                        console.log(file)
                         if (err) reject(err);
-                        else resolve({ url: result.secure_url, name: file.originalname });
+                        else resolve({ url: result.secure_url, name: result.public_id });
                     }
                 );
 
@@ -349,11 +350,12 @@ const GetListDocument = async (req, res) => {
     try {
         const skip = parseInt(req.query.skip) || 1
         const limit = parseInt(req.query.limit) || 10
-        const search = req.query.search || ""
+        const search = req.query.search || "";
+
         const query = {
             $match: {
                 $or: [
-                    { course: { $regex: search, $options: 'i' } }
+                    { course: { $regex: search, $options: 'i' } },
                 ]
             }
         }
@@ -373,4 +375,66 @@ const GetListDocument = async (req, res) => {
         return res.status(500).json({ error })
     }
 }
-module.exports = { GetListDocument, GetDocumentCourse, GetNameDocument, CreateFile, ExportDocument, ImportDocument };
+const GetDocumentDetail = async (req, res) => {
+    try {
+
+        const { _id } = req.params
+        const search = req.query.search || "";
+        if (!_id) {
+            return res.status(400).json({
+                message: "valid"
+            })
+        }
+        const detail = await modalDocument.findById(_id)
+        const data = detail.docx.filter(item =>
+            item.name.toLowerCase().includes(search.toLowerCase())
+        );
+        return res.status(200).json({
+            data
+        })
+    } catch (error) {
+        return res.status(500).json({ error })
+    }
+}
+const CreateDocx = async (req, res) => {
+    try {
+        const { _id } = req.params
+        const files = req.files;
+        if (!files || files.length === 0) return res.status(400).json({ message: "No files uploaded" });
+
+        const uploadedFiles = await Promise.all(
+            files.map(file => new Promise((resolve, reject) => {
+                // Giữ tên file gốc và đuôi
+                const originalName = file.originalname.split(".")[0];
+                const extension = file.originalname.split(".").pop();
+
+                const uploadStream = cloudinary.uploader.upload_stream(
+                    {
+                        resource_type: "raw", // raw cho Word/Excel/PPT
+                        public_id: `${originalName}-${Date.now()}`, // tên file giữ gốc
+                        format: extension // bắt buộc giữ đuôi
+                    },
+                    (err, result) => {
+                        if (err) reject(err);
+                        else resolve({ url: result.secure_url, name: file.originalname });
+                    }
+                );
+
+                uploadStream.end(file.buffer);
+            }))
+        );
+        const data = await modalDocument.findById(_id)
+
+        data.docx.push(...uploadedFiles)
+        await data.save()
+        return res.status(200).json({
+            message: "Upload successfully",
+
+        });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: error.message });
+    }
+}
+module.exports = { CreateDocx, GetDocumentDetail, GetListDocument, GetDocumentCourse, GetNameDocument, CreateFile, ExportDocument, ImportDocument };
