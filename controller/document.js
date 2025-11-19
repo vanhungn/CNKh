@@ -16,6 +16,12 @@ const CreateFile = async (req, res) => {
 
         const files = req.files;
         const { course, codeCourse } = req.body
+        const check = await modalDocument.findOne({codeCourse})
+        if(check){
+            return res.status(404).json({
+                message:"course valid"
+            })
+        }
         if (!files || files.length === 0) return res.status(400).json({ message: "No files uploaded" });
 
         const uploadedFiles = await Promise.all(
