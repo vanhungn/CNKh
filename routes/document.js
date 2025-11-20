@@ -17,11 +17,13 @@ const upload2 = multer({
 });
 router.get('/export/:_id', document.ExportDocument)
 router.get('/', document.GetNameDocument)
-router.get('/list',document.GetListDocument)
-router.get('/detail/:_id',document.GetDocumentDetail)
-router.get('/docx/:_idCourse/:_idDocx',document.GetDocumentCourse)
+router.get('/list', document.GetListDocument)
+router.get('/detail/:_id', document.GetDocumentDetail)
+router.get('/docx/:_idCourse/:_idDocx', document.GetDocumentCourse)
 router.post('/create', upload.array("file", 10), document.CreateFile)
-router.post('/import/:_id', upload2.single('file'), document.ImportDocument);
-router.post('/create_docx/:_id',upload.array('file',10),document.CreateDocx)
+router.post('/import/:_id', upload2.single('file'), document.ImportDocument)
+router.post('/create_docx/:_id', upload.array('file', 10), document.CreateDocx)
+router.delete('/docx_delete', document.DeleteDocx)
+router.delete('/delete/:_id',document.DeleteDocument)
 
 module.exports = router

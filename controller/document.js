@@ -16,10 +16,10 @@ const CreateFile = async (req, res) => {
 
         const files = req.files;
         const { course, codeCourse } = req.body
-        const check = await modalDocument.findOne({codeCourse})
-        if(check){
+        const check = await modalDocument.findOne({ codeCourse })
+        if (check) {
             return res.status(403).json({
-                message:"course valid"
+                message: "course valid"
             })
         }
         if (!files || files.length === 0) return res.status(400).json({ message: "No files uploaded" });
@@ -422,18 +422,29 @@ const CreateDocx = async (req, res) => {
         const uploadedFiles = await Promise.all(
             files.map(file => new Promise((resolve, reject) => {
                 // Giữ tên file gốc và đuôi
-                const originalName = file.originalname.split(".")[0];
-                const extension = file.originalname.split(".").pop();
+                const originalName = file.originalname;
+                const nameWithoutExt = originalName.substring(0, originalName.lastIndexOf('.'));
+                const extension = originalName.substring(originalName.lastIndexOf('.') + 1);
+
+                // QUAN TRỌNG: Loại bỏ dấu tiếng Việt và ký tự đặc biệt
+                const sanitizedName = nameWithoutExt
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '') // Bỏ dấu
+                    .replace(/đ/g, 'd').replace(/Đ/g, 'D') // Đổi đ thành d
+                    .replace(/[^a-zA-Z0-9-_]/g, '_') // Thay ký tự đặc biệt bằng _
+                    .toLowerCase();
+
+                const publicId = `${sanitizedName}-${Date.now()}`;
 
                 const uploadStream = cloudinary.uploader.upload_stream(
                     {
-                        resource_type: "raw", // raw cho Word/Excel/PPT
-                        public_id: `${originalName}-${Date.now()}`, // tên file giữ gốc
-                        format: extension // bắt buộc giữ đuôi
+                        resource_type: "raw",
+                        public_id: publicId,
+                        format: extension
                     },
                     (err, result) => {
                         if (err) reject(err);
-                        else resolve({ url: result.secure_url, name: file.originalname });
+                        else resolve({ url: result.secure_url, name: result.public_id });
                     }
                 );
 
@@ -454,4 +465,51 @@ const CreateDocx = async (req, res) => {
         return res.status(500).json({ error: error.message });
     }
 }
-module.exports = { CreateDocx, GetDocumentDetail, GetListDocument, GetDocumentCourse, GetNameDocument, CreateFile, ExportDocument, ImportDocument };
+const DeleteDocx = async (req, res) => {
+    try {
+        const { idDocument, idDocx } = req.query
+        if (!idDocument || !idDocx) {
+            return res.status(400).json({
+                message: "valid"
+            })
+        }
+        const document = await modalDocument.findById({ _id: idDocument })
+        document.docx = document.docx.filter(item => item._id.toString() !== idDocx)
+        await document.save()
+        return res.status(200).json({
+            message: "successfully"
+        })
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+
+    }
+}
+const DeleteDocument = async (req, res) => {
+    try {
+        const { _id } = req.params
+        if (!_id) {
+            return res.status(400).json({
+                message: "valid"
+            })
+        }
+        await modalDocument.findByIdAndDelete({ _id })
+        return res.status(200).json({
+            message: "successfully"
+        })
+    } catch (error) {
+        return res.status(500).json({ error: error.message });
+
+    }
+}
+module.exports = {
+    CreateDocx,
+    GetDocumentDetail,
+    GetListDocument,
+    GetDocumentCourse,
+    GetNameDocument,
+    CreateFile,
+    ExportDocument,
+    ImportDocument,
+    DeleteDocx,
+    DeleteDocument
+};
