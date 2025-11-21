@@ -25,5 +25,27 @@ const GetAlgorithm = async (req, res) => {
         return res.status(500).json({ error })
     }
 }
-
-module.exports = { GetAlgorithm }
+const UpdateAlgorithm = async (req, res) => {
+    try {
+        const { _id } = req.params
+        const { titleTopic, typeOfTopic, questionTopic, inputTopic, outputTopic, suggestTopic } = req.body
+        if (!_id || !titleTopic || !typeOfTopic || !questionTopic || !inputTopic || !outputTopic || !suggestTopic) {
+            return res.status(400).json({
+                message: "Valid"
+            })
+        }
+        const update = await modalProblem.findByIdAndUpdate(_id,
+            {
+                title: titleTopic, typeOf: typeOfTopic, statement: questionTopic,
+                input: inputTopic, output: outputTopic, suggest: suggestTopic
+            }, { new: true }
+        )
+        return res.status(200).json({
+            message: "successfully",
+            
+        })
+    } catch (error) {
+        return res.status(500).json({ error })
+    }
+}
+module.exports = { GetAlgorithm, UpdateAlgorithm }

@@ -4,8 +4,11 @@ const problem = require('../controller/codeLap')
 const algorithm = require('../controller/problem')
 const verifyToken = require('../middleware/verifyToken')
 
+
+router.get('/algorithm', algorithm.GetAlgorithm)
+router.post('/update/:_id', algorithm.UpdateAlgorithm)
+//problem
 router.get('/', problem.GetProblem)
-router.get('/algorithm',algorithm.GetAlgorithm)
 router.get('/detail/:_id', verifyToken, problem.GetProblemDetail)
 router.post('/create', problem.CreatePractice)
 
