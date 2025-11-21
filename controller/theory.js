@@ -6,28 +6,37 @@ const GetTheory = async (req, res) => {
         const skip = parseInt(req.query.skip) || 1
         const limit = parseInt(req.query.limit) || 10
         const search = req.query.search || ""
+        if (!_id) {
+            return res.status(400).json({
+                message: "Valid"
+            })
+        }
+        const querys = {
+            $match: {
+                $and: [
+                    { idCourse: new mongoose.Types.ObjectId(_id) },
+                    {
+                        $or: [
+                            { chapter: { $regex: search, $options: "i" } }
+                        ]
+                    }
+                ]
+            }
+        }
         const data = await modalTheory.aggregate([
-            {
-                $match: {
-                    $and: [
-                        { idCourse: new mongoose.Types.ObjectId(_id) },
-                        {
-                            $or: [
-                                { chapter: { $regex: search, $options: "i" } }
-                            ]
-                        }
-                    ]
-                }
-            },
+            querys,
             { $skip: (skip - 1) * limit },
             { $limit: limit }
         ])
+        const length = await modalTheory.aggregate([querys])
+        const total = Math.ceil(length.length / limit)
         const dataChapter = []
         data.forEach((e) => {
             dataChapter.push({ chapter: e.chapter, _id: e._id })
         })
+
         return res.status(200).json({
-            data: dataChapter
+            data: dataChapter, total
         })
     } catch (error) {
         return res.status(500).json({ error })
