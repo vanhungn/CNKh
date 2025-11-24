@@ -1,5 +1,15 @@
 const modalTheory = require("../modal/thoery")
 const mongoose = require("mongoose");
+const cloudinary = require('../config/cloudinaryConfig')
+const uploadToCloudinary = (buffer) => {
+    return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream((error, result) => {
+            if (result) resolve(result);
+            else reject(error);
+        });
+        stream.end(buffer);
+    });
+};
 const GetTheory = async (req, res) => {
     try {
         const { _id } = req.params
@@ -58,4 +68,39 @@ const GetListQuestion = async (req, res) => {
         return res.status(500).json({ error })
     }
 }
-module.exports = { GetTheory, GetListQuestion }
+const UpdateTheory = async (req, res) => {
+    try {
+        const { idCourse } = req.params;
+        let { chapter, list, index } = req.body;
+
+        if (!chapter || !list) {
+            return res.status(400).json({ message: "chapter và list không được để trống" });
+        }
+
+        list = JSON.parse(list);
+        index = JSON.parse(index); // array các index của list cần upload ảnh
+
+        // req.files.length <= index.length
+        for (let i = 0; i < req.files.length; i++) {
+            const idx = index[i]; // lấy index thực sự trong list
+            if (idx !== undefined && list[idx]) {
+                const result = await uploadToCloudinary(req.files[i].buffer);
+                list[idx].imgUrl = result.secure_url;
+            }
+        }
+
+        const data = await modalTheory.findByIdAndUpdate(
+            idCourse,
+            { chapter, list },
+            { new: true }
+        );
+
+        return res.status(200).json({ data });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: err.message });
+    }
+};
+
+
+module.exports = { GetTheory, GetListQuestion, UpdateTheory }

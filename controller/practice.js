@@ -15,7 +15,9 @@ const CreateTheory = async (req, res) => {
         const { idCourse } = req.params;
         let { chapter, list } = req.body;
         if (!chapter, !list) {
-
+            return res.status(400).json({
+                message:"valid"
+            })
         }
         list = JSON.parse(list);
         for (let i = 0; i < req.files.length; i++) {
