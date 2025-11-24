@@ -1,26 +1,38 @@
 const modalTheory = require('../modal/thoery')
+const cloudinary = require('../config/cloudinaryConfig')
+const uploadToCloudinary = (buffer) => {
+    return new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream((error, result) => {
+            if (result) resolve(result);
+            else reject(error);
+        });
+        stream.end(buffer);
+    });
+};
+
 const CreateTheory = async (req, res) => {
     try {
-        const { chapter, list } = req.body
-        if (!chapter || list.length === 0) {
-            return res.status(400).json({
-                message: "not valid"
-            })
+        const { idCourse } = req.params;
+        let { chapter, list } = req.body;
+        if (!chapter, !list) {
+
         }
-        const data = await modalTheory.create({
-            chapter, list
-        })
-        return res.status(200).json({
-            data
-        })
-    } catch (error) {
-        console.error("❌ CreateTheory error:", error);
-        return res.status(500).json({
-            message: error.message,
-            stack: error.stack
-        });
+        list = JSON.parse(list);
+        for (let i = 0; i < req.files.length; i++) {
+            const result = await uploadToCloudinary(req.files[i].buffer);
+            list[i].imgUrl = result.secure_url;
+        }
+
+        const data = await modalTheory.create({ chapter, list, idCourse });
+
+        return res.status(200).json({ data });
+    } catch (err) {
+
+        return res.status(500).json({ error: err.message });
     }
-}
+};
+
+
 const GetTheoryChapter = async (req, res) => {
     try {
         const listChapter = await modalTheory.find({})
@@ -37,7 +49,7 @@ const GetTheoryChapter = async (req, res) => {
     } catch (error) {
         console.log('ksdhjh')
         return res.status(500).json({
-            
+
             message: error.message,
             stack: error.stack
         });

@@ -9,10 +9,12 @@ var usersRouter = require('./routes/users');
 const problemRouter = require('./routes/problems')
 const theoryRouter = require('./routes/theory')
 const document = require('./routes/document')
+
 const db = require('./config/db')
 var app = express();
 
 db()
+
 app.use(cors({
   origin: 'http://localhost:5173', // hoặc '*' nếu không dùng credentials
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],

@@ -1,15 +1,9 @@
 const modalTheory = require('../modal/thoery')
 const mammoth = require('mammoth');
 const { Document, Packer, Paragraph, TextRun } = require('docx');
-const cloudinary = require("cloudinary").v2;
 const modalDocument = require('../modal/document')
-// Cấu hình Cloudinary
-cloudinary.config({
-    cloud_name: "djybyg1o3",
-    api_key: "515998948284271",
-    api_secret: "53vkRUxGp4_JXSjQVIFfED6u-tk",
-    secure: true,
-});
+const cloudinary = require('../config/cloudinaryConfig')
+
 
 const CreateFile = async (req, res) => {
     try {
