@@ -64,12 +64,11 @@ const GetListQuestion = async (req, res) => {
             })
         }
         const result = await modalTheory.aggregate([
-            { $match: { _id:new mongoose.Types.ObjectId(_id) } },
+            { $match: { _id: new mongoose.Types.ObjectId(_id) } },
             {
                 $project: {
                     chapter: 1,
                     idCourse: 1,
-                  
                     list: { $slice: ['$list', skip, limit] }
                 }
             }
@@ -112,9 +111,23 @@ const UpdateTheory = async (req, res) => {
         return res.status(200).json({ data });
     } catch (err) {
         console.error(err);
-        return res.status(500).json({ error: err.message });
+        return res.status(500).json({ error });
     }
 };
+const RemoveItemList = async (req, res) => {
+    try {
+        const { _id, idCourse } = req.params
+        await modalTheory.findByIdAndUpdate(
+            { _id: new mongoose.Types.ObjectId(idCourse) },
+            { $pull: { list: { _id:new mongoose.Types.ObjectId(_id) } } },
+            { new: true }
+        );
+        return res.status(200).json({
+            message: "successfully"
+        })
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+}
 
-
-module.exports = { GetTheory, GetListQuestion, UpdateTheory }
+module.exports = { RemoveItemList, GetTheory, GetListQuestion, UpdateTheory }
