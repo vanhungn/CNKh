@@ -52,7 +52,7 @@ const GetListQuestion = async (req, res) => {
         }
         const data = await modalTheory.findById(_id)
         return res.status(200).json({
-            data: data.list
+            data: data
         })
     } catch (error) {
         return res.status(500).json({ error })
