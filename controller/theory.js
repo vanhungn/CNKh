@@ -55,14 +55,28 @@ const GetTheory = async (req, res) => {
 const GetListQuestion = async (req, res) => {
     try {
         const { _id } = req.params
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
         if (!_id) {
             return res.status(400).json({
                 message: "valid"
             })
         }
-        const data = await modalTheory.findById(_id)
+        const result = await modalTheory.aggregate([
+            { $match: { _id:new mongoose.Types.ObjectId(_id) } },
+            {
+                $project: {
+                    chapter: 1,
+                    idCourse: 1,
+                  
+                    list: { $slice: ['$list', skip, limit] }
+                }
+            }
+        ]);
+        console.log(result)
         return res.status(200).json({
-            data: data
+            data: result
         })
     } catch (error) {
         return res.status(500).json({ error })
