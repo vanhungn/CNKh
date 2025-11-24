@@ -119,7 +119,7 @@ const RemoveItemList = async (req, res) => {
         const { _id, idCourse } = req.params
         await modalTheory.findByIdAndUpdate(
             { _id: new mongoose.Types.ObjectId(idCourse) },
-            { $pull: { list: { _id:new mongoose.Types.ObjectId(_id) } } },
+            { $pull: { list: { _id: new mongoose.Types.ObjectId(_id) } } },
             { new: true }
         );
         return res.status(200).json({
@@ -129,5 +129,20 @@ const RemoveItemList = async (req, res) => {
         return res.status(500).json({ error });
     }
 }
-
-module.exports = { RemoveItemList, GetTheory, GetListQuestion, UpdateTheory }
+const DeleteTheory = async (req, res) => {
+    try {
+        const { _id } = req.params
+        if (!_id) {
+            return res.status(400).json({
+                message: "valid"
+            })
+        }
+        await modalTheory.findByIdAndDelete(_id)
+        return res.status(200).json({
+            message: "successfully"
+        })
+    } catch (error) {
+        return res.status(500).json({ error });
+    }
+}
+module.exports = { DeleteTheory, RemoveItemList, GetTheory, GetListQuestion, UpdateTheory }
