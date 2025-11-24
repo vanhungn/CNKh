@@ -42,4 +42,20 @@ const GetTheory = async (req, res) => {
         return res.status(500).json({ error })
     }
 }
-module.exports = { GetTheory }
+const GetListQuestion = async (req, res) => {
+    try {
+        const { _id } = req.params
+        if (!_id) {
+            return res.status(400).json({
+                message: "valid"
+            })
+        }
+        const data = await modalTheory.findById(_id)
+        return res.status(200).json({
+            data: data.list
+        })
+    } catch (error) {
+        return res.status(500).json({ error })
+    }
+}
+module.exports = { GetTheory, GetListQuestion }

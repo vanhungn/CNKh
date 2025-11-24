@@ -7,6 +7,7 @@ const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() });
 
 router.get('/:_id', theoryAdmin.GetTheory)
+router.get('/question/:_id',theoryAdmin.GetListQuestion)
 //theory
 router.get('/chapter', verifyToken, theory.GetTheoryChapter)
 router.get('/list/:_id', verifyToken, theory.GetTheoryList)
