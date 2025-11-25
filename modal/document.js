@@ -8,7 +8,8 @@ const modalDocument = new Schema({
     docx: [{
         name: String,
         url: String,
-    }]
+    }],
+    avatar: String
 }, { timestamps: true }, { collection: "documents" })
 
 module.exports = mongoose.model('document', modalDocument)

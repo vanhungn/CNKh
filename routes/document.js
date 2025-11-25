@@ -15,15 +15,65 @@ const upload2 = multer({
         }
     }
 });
+const upload3 = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+        fileSize: 20 * 1024 * 1024  // 20MB
+    },
+    fileFilter: (req, file, cb) => {
+        // ✅ MIME types cho phép
+        const allowedMimeTypes = [
+            // Ảnh
+            'image/jpeg',
+            'image/jpg',
+            'image/png',
+            'image/gif',
+            'image/webp',
+            'image/svg+xml',
+
+            // Word
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+            'application/msword', // .doc
+
+            // Excel
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
+            'application/vnd.ms-excel', // .xls
+
+            // PowerPoint
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
+            'application/vnd.ms-powerpoint', // .ppt
+
+            // PDF
+            'application/pdf',
+
+            // Text
+            'text/plain', // .txt
+            'text/csv', // .csv
+
+            // Archive
+            'application/zip',
+            'application/x-rar-compressed',
+            'application/x-7z-compressed',
+
+            
+        ];
+
+        if (allowedMimeTypes.includes(file.mimetype)) {
+            cb(null, true);
+        } else {
+            cb(new Error(`File type ${file.mimetype} không được hỗ trợ!`));
+        }
+    }
+});
 router.get('/export/:_id', document.ExportDocument)
 router.get('/', document.GetNameDocument)
 router.get('/list', document.GetListDocument)
 router.get('/detail/:_id', document.GetDocumentDetail)
 router.get('/docx/:_idCourse/:_idDocx', document.GetDocumentCourse)
-router.post('/create', upload.array("file", 10), document.CreateFile)
+router.post('/create', upload3.fields([{ name: "file", maxCount: 10 }, { name: "avatar", maxCount: 1 }]), document.CreateFile)
 router.post('/import/:_id', upload2.single('file'), document.ImportDocument)
 router.post('/create_docx/:_id', upload.array('file', 10), document.CreateDocx)
 router.delete('/docx_delete', document.DeleteDocx)
-router.delete('/delete/:_id',document.DeleteDocument)
+router.delete('/delete/:_id', document.DeleteDocument)
 
 module.exports = router
