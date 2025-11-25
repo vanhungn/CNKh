@@ -21,7 +21,9 @@ const MicrosoftLogin = async (req, res) => {
         });
         await modelUser.create({
             name: data.name,
-            email: data.unique_name
+            email: data.unique_name,
+            role:"student",
+            password:""
         })
         return res.status(200).json({
             token: accessToken

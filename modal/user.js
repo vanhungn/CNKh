@@ -3,7 +3,9 @@ const Schema = mongoose.Schema
 
 const modelUser = new Schema({
     name: String,
-    email:String
+    email:String,
+    password:String,
+    role:String
 },
 {timestamps:true},
 {collection:'users'}
