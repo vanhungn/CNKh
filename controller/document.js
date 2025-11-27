@@ -565,6 +565,12 @@ const UpdateDocument = async (req, res) => {
                 message: "Not valid"
             })
         }
+        const check = await modalDocument.findOne({codeCourse})
+        if(check){
+            return res.status(403).json({
+                message:"Exist"
+            })
+        }
         const update = await modalDocument.findByIdAndUpdate(_id, { course, codeCourse }, { new: true })
         return res.status(200).json({
             message: 'successfully',
