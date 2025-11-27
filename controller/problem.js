@@ -48,4 +48,20 @@ const UpdateAlgorithm = async (req, res) => {
         return res.status(500).json({ error })
     }
 }
-module.exports = { GetAlgorithm, UpdateAlgorithm }
+const DeleteProblem = async(req,res) =>{
+    try {
+        const {_id} = req.params
+        if(!_id){
+            return res.status(400).json({
+                message:"Not valid"
+            })
+        }
+        await modalProblem.findByIdAndDelete(_id)
+        return res.status(200).json({
+            message:"successfully"
+        })
+    } catch (error) {
+        return res.status(500).json({error})
+    }
+}
+module.exports = { DeleteProblem,GetAlgorithm, UpdateAlgorithm }
