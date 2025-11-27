@@ -55,7 +55,7 @@ const upload3 = multer({
             'application/x-rar-compressed',
             'application/x-7z-compressed',
 
-            
+
         ];
 
         if (allowedMimeTypes.includes(file.mimetype)) {
@@ -73,6 +73,7 @@ router.get('/docx/:_idCourse/:_idDocx', document.GetDocumentCourse)
 router.post('/create', upload3.fields([{ name: "file", maxCount: 10 }, { name: "avatar", maxCount: 1 }]), document.CreateFile)
 router.post('/import/:_id', upload2.single('file'), document.ImportDocument)
 router.post('/create_docx/:_id', upload.array('file', 10), document.CreateDocx)
+router.post('/update/:_id', document.UpdateDocument)
 router.delete('/docx_delete', document.DeleteDocx)
 router.delete('/delete/:_id', document.DeleteDocument)
 

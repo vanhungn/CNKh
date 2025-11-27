@@ -8,32 +8,32 @@ const cloudinary = require('../config/cloudinaryConfig')
 const CreateFile = async (req, res) => {
     try {
         const { course, codeCourse } = req.body;
-        
+
         // ✅ Validate input
         if (!course || !codeCourse) {
             return res.status(400).json({
                 message: "Thiếu thông tin khóa học"
             });
         }
-        
+
         // ✅ Lấy files từ req.files (upload.fields)
         const files = req.files['file'] || [];      // Array files
         const avatarFile = req.files['avatar']?.[0]; // Single avatar
-        
+
         // Kiểm tra avatar
         if (!avatarFile) {
-            return res.status(400).json({ 
-                message: "Chưa chọn avatar" 
+            return res.status(400).json({
+                message: "Chưa chọn avatar"
             });
         }
-        
+
         // Kiểm tra files
         if (!files || files.length === 0) {
-            return res.status(400).json({ 
-                message: "No files uploaded" 
+            return res.status(400).json({
+                message: "No files uploaded"
             });
         }
-        
+
         // Kiểm tra trùng mã
         const check = await modalDocument.findOne({ codeCourse });
         if (check) {
@@ -41,22 +41,22 @@ const CreateFile = async (req, res) => {
                 message: "course valid"
             });
         }
-        
+
         // ✅ Upload AVATAR lên Cloudinary
         const avatar = await new Promise((resolve, reject) => {
             const originalName = avatarFile.originalname;
             const nameWithoutExt = originalName.substring(0, originalName.lastIndexOf('.'));
             const extension = originalName.substring(originalName.lastIndexOf('.') + 1);
-            
+
             const sanitizedName = nameWithoutExt
                 .normalize('NFD')
                 .replace(/[\u0300-\u036f]/g, '')
                 .replace(/đ/g, 'd').replace(/Đ/g, 'D')
                 .replace(/[^a-zA-Z0-9-_]/g, '_')
                 .toLowerCase();
-            
+
             const publicId = `avatars/${sanitizedName}-${Date.now()}`;
-            
+
             const uploadStream = cloudinary.uploader.upload_stream(
                 {
                     resource_type: "image",  // Avatar là ảnh
@@ -65,32 +65,32 @@ const CreateFile = async (req, res) => {
                 },
                 (err, result) => {
                     if (err) reject(err);
-                    else resolve({ 
-                        url: result.secure_url, 
-                        name: result.public_id 
+                    else resolve({
+                        url: result.secure_url,
+                        name: result.public_id
                     });
                 }
             );
-            
+
             uploadStream.end(avatarFile.buffer);
         });
-        
+
         // ✅ Upload FILES lên Cloudinary (code cũ của bạn)
         const uploadedFiles = await Promise.all(
             files.map(file => new Promise((resolve, reject) => {
                 const originalName = file.originalname;
                 const nameWithoutExt = originalName.substring(0, originalName.lastIndexOf('.'));
                 const extension = originalName.substring(originalName.lastIndexOf('.') + 1);
-                
+
                 const sanitizedName = nameWithoutExt
                     .normalize('NFD')
                     .replace(/[\u0300-\u036f]/g, '')
                     .replace(/đ/g, 'd').replace(/Đ/g, 'D')
                     .replace(/[^a-zA-Z0-9-_]/g, '_')
                     .toLowerCase();
-                
+
                 const publicId = `documents/${sanitizedName}-${Date.now()}`;
-                
+
                 const uploadStream = cloudinary.uploader.upload_stream(
                     {
                         resource_type: "raw",
@@ -99,17 +99,17 @@ const CreateFile = async (req, res) => {
                     },
                     (err, result) => {
                         if (err) reject(err);
-                        else resolve({ 
-                            url: result.secure_url, 
-                            name: result.public_id 
+                        else resolve({
+                            url: result.secure_url,
+                            name: result.public_id
                         });
                     }
                 );
-                
+
                 uploadStream.end(file.buffer);
             }))
         );
-        
+
         // ✅ Lưu vào database (THÊM avatar)
         await modalDocument.create({
             course,
@@ -117,11 +117,11 @@ const CreateFile = async (req, res) => {
             avatar: avatar.url,        // ⭐ THÊM MỚI
             docx: uploadedFiles
         });
-        
+
         return res.status(200).json({
             message: "Upload successfully"
         });
-        
+
     } catch (error) {
         console.error(error);
         return res.status(500).json({ error: error.message });
@@ -556,6 +556,24 @@ const DeleteDocument = async (req, res) => {
 
     }
 }
+const UpdateDocument = async (req, res) => {
+    try {
+        const { _id } = req.params
+        const { course, codeCourse } = req.body
+        if (!course || !codeCourse) {
+            return res.status(400).json({
+                message: "Not valid"
+            })
+        }
+        const update = await modalDocument.findByIdAndUpdate(_id, { course, codeCourse }, { new: true })
+        return res.status(200).json({
+            message: 'successfully',
+            update
+        })
+    } catch (error) {
+        return res.status(500).json({ error })
+    }
+}
 module.exports = {
     CreateDocx,
     GetDocumentDetail,
@@ -566,5 +584,6 @@ module.exports = {
     ExportDocument,
     ImportDocument,
     DeleteDocx,
-    DeleteDocument
+    DeleteDocument,
+    UpdateDocument
 };
