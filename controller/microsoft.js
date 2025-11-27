@@ -6,26 +6,26 @@ const MicrosoftLogin = async (req, res) => {
         const data = req.auth
         const accessToken = await createToken({
             name: data.name,
-            email: data. preferred_username
+            email: data.preferred_username
         }, '30m', 'accessToken')
         const refreshToken = await createToken({
             name: data.name,
-            email: data. preferred_username
+            email: data.preferred_username
         }, '7d', 'refreshToken')
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production', // chỉ true khi deploy
-            sameSite: 'strict',
+            sameSite: 'None',
             path: '/',
             maxAge: 7 * 24 * 60 * 60 * 1000 // 7 ngày khớp với token
         });
         let id = ""
-        const check = await modelUser.findOne({ email: data. preferred_username })
+        const check = await modelUser.findOne({ email: data.preferred_username })
         id = check?._id
         if (!check) {
             const create = await modelUser.create({
                 name: data.name,
-                email: data. preferred_username,
+                email: data.preferred_username,
                 role: "student",
                 password: ""
             })
@@ -34,7 +34,7 @@ const MicrosoftLogin = async (req, res) => {
 
         return res.status(200).json({
             token: accessToken,
-            data: { _id: id, name: data.name, email: data. preferred_username }
+            data: { _id: id, name: data.name, email: data.preferred_username }
         })
     } catch (error) {
         return res.status(500).json({
