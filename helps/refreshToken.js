@@ -10,7 +10,7 @@ const RefreshToken = async (req, res) => {
             return res.status(401).json({ message: 'Không tìm thấy refresh token' });
         }
         const decode = jwt.verify(refreshToken, process.env.REFRESH_KEY)
-        const user = await User.findById(decode.id)
+        const user = await User.findOne({ email: decode.email })
         if (!user) {
             return res.status(404).json({ message: 'Không tìm thấy user' });
         }
@@ -22,7 +22,8 @@ const RefreshToken = async (req, res) => {
         const accessToken = await createToken(payload, "30m", "accessToken");
         return res.status(200).json({
             success: true,
-            accessToken
+            accessToken,
+            data: payload
         });
 
     } catch (error) {

@@ -6,15 +6,15 @@ const theoryAdmin = require('../controller/theory')
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.get('/:_id', theoryAdmin.GetTheory)
-router.get('/question/:_id', theoryAdmin.GetListQuestion)
-router.post('/update/:idCourse', upload.array("imgUrl"), theoryAdmin.UpdateTheory)
-router.delete('/delete_item/:_id/:idCourse',theoryAdmin.RemoveItemList)
-router.delete('/delete/:_id',theoryAdmin.DeleteTheory)
+router.get('/:_id',verifyToken, theoryAdmin.GetTheory)
+router.get('/question/:_id', verifyToken,theoryAdmin.GetListQuestion)
+router.post('/update/:idCourse',verifyToken, upload.array("imgUrl"), theoryAdmin.UpdateTheory)
+router.delete('/delete_item/:_id/:idCourse',verifyToken,theoryAdmin.RemoveItemList)
+router.delete('/delete/:_id',verifyToken,theoryAdmin.DeleteTheory)
 //theory
 router.get('/chapter', verifyToken, theory.GetTheoryChapter)
 router.get('/list/:_id', verifyToken, theory.GetTheoryList)
-router.post('/create/:idCourse', upload.array("imgUrl"), theory.CreateTheory)
+router.post('/create/:idCourse',verifyToken, upload.array("imgUrl"), theory.CreateTheory)
 
 
 

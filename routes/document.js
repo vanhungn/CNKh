@@ -2,6 +2,7 @@ const express = require("express")
 const router = express.Router()
 const document = require('../controller/document')
 const multer = require('multer');
+const verifyToken = require('../middleware/verifyToken')
 const upload = multer({ storage: multer.memoryStorage() });
 const storage = multer.memoryStorage(); // Lưu trong RAM
 const upload2 = multer({
@@ -65,16 +66,16 @@ const upload3 = multer({
         }
     }
 });
-router.get('/export/:_id', document.ExportDocument)
-router.get('/', document.GetNameDocument)
-router.get('/list', document.GetListDocument)
-router.get('/detail/:_id', document.GetDocumentDetail)
-router.get('/docx/:_idCourse/:_idDocx', document.GetDocumentCourse)
-router.post('/create', upload3.fields([{ name: "file", maxCount: 10 }, { name: "avatar", maxCount: 1 }]), document.CreateFile)
-router.post('/import/:_id', upload2.single('file'), document.ImportDocument)
-router.post('/create_docx/:_id', upload.array('file', 10), document.CreateDocx)
-router.post('/update/:_id', document.UpdateDocument)
-router.delete('/docx_delete', document.DeleteDocx)
-router.delete('/delete/:_id', document.DeleteDocument)
+router.get('/export/:_id',verifyToken, document.ExportDocument)
+router.get('/', verifyToken,document.GetNameDocument)
+router.get('/list', verifyToken,document.GetListDocument)
+router.get('/detail/:_id',verifyToken, document.GetDocumentDetail)
+router.get('/docx/:_idCourse/:_idDocx',verifyToken, document.GetDocumentCourse)
+router.post('/create',verifyToken, upload3.fields([{ name: "file", maxCount: 10 }, { name: "avatar", maxCount: 1 }]), document.CreateFile)
+router.post('/import/:_id',verifyToken, upload2.single('file'), document.ImportDocument)
+router.post('/create_docx/:_id',verifyToken, upload.array('file', 10), document.CreateDocx)
+router.post('/update/:_id',verifyToken, document.UpdateDocument)
+router.delete('/docx_delete',verifyToken, document.DeleteDocx)
+router.delete('/delete/:_id',verifyToken, document.DeleteDocument)
 
 module.exports = router
