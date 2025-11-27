@@ -11,15 +11,14 @@ const MicrosoftLogin = async (req, res) => {
         const refreshToken = await createToken({
             name: data.name,
             email: data. preferred_username
-        }, '1d', 'refreshToken')
+        }, '7d', 'refreshToken')
         res.cookie('refreshToken', refreshToken, {
-            httpOnly: true,  // 🔒 chặn JS truy cập cookie
-            secure: true,    // 🔒 chỉ gửi qua HTTPS (khi deploy)
-            sameSite: 'strict', // chống CSRF
-            path: '/',       // cookie dùng toàn site
-            maxAge: 1 * 24 * 60 * 60 * 1000
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production', // chỉ true khi deploy
+            sameSite: 'strict',
+            path: '/',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 ngày khớp với token
         });
-        console.log(data)
         let id = ""
         const check = await modelUser.findOne({ email: data. preferred_username })
         id = check?._id

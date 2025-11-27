@@ -4,7 +4,8 @@ const document = require('../controller/document')
 const multer = require('multer');
 const verifyToken = require('../middleware/verifyToken')
 const upload = multer({ storage: multer.memoryStorage() });
-const storage = multer.memoryStorage(); // Lưu trong RAM
+const storage = multer.memoryStorage();
+const checkRole = require('../middleware/checkRole') // Lưu trong RAM
 const upload2 = multer({
     storage: storage,
     fileFilter: (req, file, cb) => {
@@ -66,16 +67,16 @@ const upload3 = multer({
         }
     }
 });
-router.get('/export/:_id',verifyToken, document.ExportDocument)
-router.get('/', verifyToken,document.GetNameDocument)
-router.get('/list', verifyToken,document.GetListDocument)
-router.get('/detail/:_id',verifyToken, document.GetDocumentDetail)
-router.get('/docx/:_idCourse/:_idDocx',verifyToken, document.GetDocumentCourse)
-router.post('/create',verifyToken, upload3.fields([{ name: "file", maxCount: 10 }, { name: "avatar", maxCount: 1 }]), document.CreateFile)
-router.post('/import/:_id',verifyToken, upload2.single('file'), document.ImportDocument)
-router.post('/create_docx/:_id',verifyToken, upload.array('file', 10), document.CreateDocx)
-router.post('/update/:_id',verifyToken, document.UpdateDocument)
-router.delete('/docx_delete',verifyToken, document.DeleteDocx)
-router.delete('/delete/:_id',verifyToken, document.DeleteDocument)
+router.get('/export/:_id', verifyToken, document.ExportDocument)
+router.get('/', verifyToken, document.GetNameDocument)
+router.get('/list', verifyToken, document.GetListDocument)
+router.get('/detail/:_id', verifyToken, document.GetDocumentDetail)
+router.get('/docx/:_idCourse/:_idDocx', verifyToken, document.GetDocumentCourse)
+router.post('/create', verifyToken,checkRole, upload3.fields([{ name: "file", maxCount: 10 }, { name: "avatar", maxCount: 1 }]), document.CreateFile)
+router.post('/import/:_id', verifyToken,checkRole, upload2.single('file'), document.ImportDocument)
+router.post('/create_docx/:_id', verifyToken,checkRole, upload.array('file', 10), document.CreateDocx)
+router.post('/update/:_id', verifyToken,checkRole, document.UpdateDocument)
+router.delete('/docx_delete', verifyToken,checkRole, document.DeleteDocx)
+router.delete('/delete/:_id', verifyToken,checkRole, document.DeleteDocument)
 
 module.exports = router
