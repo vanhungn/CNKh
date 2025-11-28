@@ -13,7 +13,7 @@ router.post('/update/:idCourse', verifyToken, checkRole, upload.array("imgUrl"),
 router.delete('/delete_item/:_id/:idCourse', checkRole, verifyToken, theoryAdmin.RemoveItemList)
 router.delete('/delete/:_id', verifyToken, checkRole, theoryAdmin.DeleteTheory)
 //theory
-router.get('/chapter', theory.GetTheoryChapter)
+router.get('/chapter', verifyToken, theory.GetTheoryChapter)
 router.get('/list/:_id', verifyToken, theory.GetTheoryList)
 router.post('/create/:idCourse', verifyToken, upload.array("imgUrl"), theory.CreateTheory)
 router.get('/:_id', verifyToken, theoryAdmin.GetTheory)
