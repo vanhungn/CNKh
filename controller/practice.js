@@ -1,5 +1,6 @@
 const modalTheory = require('../modal/thoery')
-const cloudinary = require('../config/cloudinaryConfig')
+const cloudinary = require('../config/cloudinaryConfig');
+const e = require('cors');
 const uploadToCloudinary = (buffer) => {
     return new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream((error, result) => {
@@ -16,7 +17,7 @@ const CreateTheory = async (req, res) => {
         let { chapter, list } = req.body;
         if (!chapter, !list) {
             return res.status(400).json({
-                message:"valid"
+                message: "valid"
             })
         }
         list = JSON.parse(list);
@@ -37,25 +38,16 @@ const CreateTheory = async (req, res) => {
 
 const GetTheoryChapter = async (req, res) => {
     try {
-        const listChapter = await modalTheory.find({})
-        const data = [];
-        listChapter.forEach(element => {
-            data.push({
-                title: element.chapter,
-                _id: element._id
-            })
-        });
-        return res.status(200).json({
-            data
-        })
+        const listChapter = await modalTheory.find({});
+        const data = listChapter.map(ch => ({ _id: ch._id, title: ch.chapter }));
+        return res.status(200).json({ data });
     } catch (error) {
-        console.log('ksdhjh')
+        console.error(error);
         return res.status(500).json({
-
-            message: error.message,
-            stack: error.stack
+            error
         });
     }
+
 }
 const GetTheoryList = async (req, res) => {
     try {

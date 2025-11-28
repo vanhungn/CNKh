@@ -7,16 +7,16 @@ const checkRole = require('../middleware/checkRole')
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.get('/:_id',verifyToken, theoryAdmin.GetTheory)
-router.get('/question/:_id', verifyToken,theoryAdmin.GetListQuestion)
-router.post('/update/:idCourse',verifyToken,checkRole, upload.array("imgUrl"), theoryAdmin.UpdateTheory)
-router.delete('/delete_item/:_id/:idCourse',checkRole,verifyToken,theoryAdmin.RemoveItemList)
-router.delete('/delete/:_id',verifyToken,checkRole,theoryAdmin.DeleteTheory)
-//theory
-router.get('/chapter', verifyToken, theory.GetTheoryChapter)
-router.get('/list/:_id', verifyToken, theory.GetTheoryList)
-router.post('/create/:idCourse',verifyToken, upload.array("imgUrl"), theory.CreateTheory)
 
+router.get('/question/:_id', verifyToken, theoryAdmin.GetListQuestion)
+router.post('/update/:idCourse', verifyToken, checkRole, upload.array("imgUrl"), theoryAdmin.UpdateTheory)
+router.delete('/delete_item/:_id/:idCourse', checkRole, verifyToken, theoryAdmin.RemoveItemList)
+router.delete('/delete/:_id', verifyToken, checkRole, theoryAdmin.DeleteTheory)
+//theory
+router.get('/chapter', theory.GetTheoryChapter)
+router.get('/list/:_id', verifyToken, theory.GetTheoryList)
+router.post('/create/:idCourse', verifyToken, upload.array("imgUrl"), theory.CreateTheory)
+router.get('/:_id', verifyToken, theoryAdmin.GetTheory)
 
 
 module.exports = router

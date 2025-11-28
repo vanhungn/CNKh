@@ -111,7 +111,7 @@ const UpdateTheory = async (req, res) => {
         return res.status(200).json({ data });
     } catch (err) {
         console.error(err);
-        return res.status(500).json({ error });
+        return res.status(500).json({ err });
     }
 };
 const RemoveItemList = async (req, res) => {
