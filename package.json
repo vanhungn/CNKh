@@ -7,6 +7,9 @@
     "dev": "nodemon ./bin/www"
   },
   "dependencies": {
+    "@editorjs/paragraph": "^2.11.7",
+    "@editorjs/simple-image": "^1.6.0",
+    "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.8.0",
     "cookie-parser": "~1.4.4",

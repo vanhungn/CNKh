@@ -10,6 +10,7 @@ const problemRouter = require('./routes/problems')
 const theoryRouter = require('./routes/theory')
 const document = require('./routes/document')
 const contact = require('./routes/contact')
+const news = require('./routes/news')
 
 const db = require('./config/db')
 var app = express();
@@ -40,6 +41,7 @@ app.use('/problem', problemRouter);
 app.use('/theory', theoryRouter);
 app.use('/document', document)
 app.use('/contact', contact)
+app.use('/news', news)
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
