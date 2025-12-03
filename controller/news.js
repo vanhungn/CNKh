@@ -102,7 +102,7 @@ const CreateNew = async (req, res) => {
             }
         });
         if (check) {
-            return res.status(400).json({
+            return res.status(406).json({
                 message: "valid"
             })
         }
