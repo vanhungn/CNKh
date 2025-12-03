@@ -2,7 +2,8 @@ const cloudinary = require('../config/cloudinaryConfig');
 const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
-const os = require("os"); // Bạn thiếu import này
+const os = require("os"); // Bạn thiếu import
+const modelNews = require("../modal/news")
 
 
 
@@ -83,5 +84,24 @@ const FetchUrl = async (req, res) => {
         });
     }
 };
+const CreateNew = async (req, res) => {
+    try {
+        const { content } = req.body
+        if (!content) {
 
-module.exports = { UploadFile, FetchUrl };
+            return res.status(400).json({
+                message: "not valid"
+            })
+        }
+
+        await modelNews.create({ content })
+        return res.status(200).json({
+            message: "successfully"
+        })
+    } catch (error) {
+        return res.status(500).json({ error })
+    }
+
+
+}
+module.exports = { UploadFile, FetchUrl, CreateNew };
