@@ -86,8 +86,8 @@ const FetchUrl = async (req, res) => {
 };
 const CreateNew = async (req, res) => {
     try {
-        const { content } = req.body
-        if (!content) {
+        const { typeOf, content } = req.body
+        if (!content || !typeOf) {
 
             return res.status(400).json({
                 message: "not valid"
@@ -106,7 +106,7 @@ const CreateNew = async (req, res) => {
                 message: "valid"
             })
         }
-        await modelNews.create({ content })
+        await modelNews.create({ typeOf, content })
         return res.status(200).json({
             message: "successfully"
         })

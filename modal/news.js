@@ -2,7 +2,7 @@ const mongoose = require('mongoose')
 const Schema = mongoose.Schema
 
 const modalNews = new Schema({
-
+    typeOf: String,
     content: {}
 }, { timestamps: true }, { collection: "news" })
 
