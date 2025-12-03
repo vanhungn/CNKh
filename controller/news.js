@@ -93,7 +93,19 @@ const CreateNew = async (req, res) => {
                 message: "not valid"
             })
         }
-
+        const check = await modelNews.findOne({
+            "content.blocks": {
+                $elemMatch: {
+                    type: "header",
+                    "data.text": content.blocks[0].data.text
+                }
+            }
+        });
+        if (check) {
+            return res.status(400).json({
+                message: "valid"
+            })
+        }
         await modelNews.create({ content })
         return res.status(200).json({
             message: "successfully"
