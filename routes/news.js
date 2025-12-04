@@ -19,8 +19,9 @@ const upload = multer({
     storage: storage,
 });
 
-router.get('/',news.GetNews)
+router.get('/', news.GetNews)
+router.get('/detail/:_id', news.GetDetailNews)
 router.post('/uploadFile', upload.single('image'), news.UploadFile)
 router.post("/fetchUrl", express.json(), news.FetchUrl);
-router.post('/create', upload.single('image'),news.CreateNew)
+router.post('/create', upload.single('image'), news.CreateNew)
 module.exports = router

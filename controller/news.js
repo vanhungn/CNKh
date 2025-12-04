@@ -113,7 +113,7 @@ const CreateNew = async (req, res) => {
             if (isSame && existing.note === note && existing.typeOf === typeOf && existing.img.etag === result.etag) {
                 return res.status(406).json({ message: "valid" });
             }
-        
+
             existing.img = { etag: result.etag, url: result.secure_url };
             existing.note = note;
             existing.typeOf = typeOf;
@@ -177,4 +177,16 @@ const GetNews = async (req, res) => {
         })
     }
 }
-module.exports = { GetNews, UploadFile, FetchUrl, CreateNew };
+const GetDetailNews = async (req, res) => {
+    try {
+        const { _id } = req.params
+        if (!_id) {
+            return res.status(400).json({ message: "not valid" })
+        }
+        const data = await modelNews.findById(_id)
+        return res.status(200).json({ data })
+    } catch (error) {
+        return res.status(500).json({ error })
+    }
+}
+module.exports = { GetDetailNews, GetNews, UploadFile, FetchUrl, CreateNew };
