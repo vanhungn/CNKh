@@ -4,7 +4,7 @@ const path = require("path");
 const axios = require("axios");
 const os = require("os"); // Bạn thiếu import
 const modelNews = require("../modal/news")
-
+const isEqual = require('lodash.isequal')
 
 
 const UploadFile = async (req, res) => {
@@ -86,34 +86,95 @@ const FetchUrl = async (req, res) => {
 };
 const CreateNew = async (req, res) => {
     try {
-        const { typeOf, content } = req.body
-        if (!content || !typeOf) {
+        const { note, title, typeOf, content } = req.body;
+        const file = req.file;
 
-            return res.status(400).json({
-                message: "not valid"
-            })
+        if (!content || !typeOf || !note || !title || !file) {
+            return res.status(400).json({ message: "not valid" });
         }
-        const check = await modelNews.findOne({
-            "content.blocks": {
-                $elemMatch: {
-                    type: "header",
-                    "data.text": content.blocks[0].data.text
-                }
+
+        // luôn parse nếu là string
+        let parsedContent = content;
+        if (typeof content === "string") {
+            try {
+                parsedContent = JSON.parse(content);
+            } catch (err) {
+                return res.status(400).json({ message: "content JSON invalid" });
             }
-        });
-        if (check) {
-            return res.status(406).json({
-                message: "valid"
-            })
         }
-        await modelNews.create({ typeOf, content })
+
+        const result = await cloudinary.uploader.upload(file.path);
+
+        const existing = await modelNews.findOne({ title });
+        console.log(result)
+        if (existing) {
+            const isSame = isEqual(existing.content, parsedContent);
+
+            if (isSame && existing.note === note && existing.typeOf === typeOf && existing.img.etag === result.etag) {
+                return res.status(406).json({ message: "valid" });
+            }
+        
+            existing.img = { etag: result.etag, url: result.secure_url };
+            existing.note = note;
+            existing.typeOf = typeOf;
+            existing.content = parsedContent;
+
+            await existing.save();
+            return res.status(200).json({
+                message: "updated successfully"
+            });
+        }
+
+        await modelNews.create({
+            typeOf,
+            img: { etag: result.etag, url: result.secure_url },
+            content: parsedContent,
+            note,
+            title
+        });
+
         return res.status(200).json({
-            message: "successfully"
+            message: "created successfully"
+        });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error });
+    }
+};
+
+
+const GetNews = async (req, res) => {
+    try {
+        const skip = parseInt(req.query.skip) || 1
+        const limit = parseInt(req.query.limit) || 10
+        const typeOf = req.query.typeOf
+        const search = req.query.search || ""
+        const sort = req.query.sort || -1
+        const query = {
+            $match: {
+                ...(typeOf && { typeOf: typeOf }),
+                $or: [
+                    { title: { $regex: search, $options: "i" } }
+                ]
+            }
+        }
+        const data = await modelNews.aggregate([
+            query,
+            { $sort: { createdAt: sort } },
+            { $skip: (skip - 1) * limit },
+            { $limit: limit }
+        ])
+        const dataLength = await modelNews.aggregate([query])
+        const total = Math.ceil(dataLength.length / limit)
+        return res.status(200).json({
+            data,
+            total
         })
     } catch (error) {
-        return res.status(500).json({ error })
+        return res.status(500).json({
+            massage: error
+        })
     }
-
-
 }
-module.exports = { UploadFile, FetchUrl, CreateNew };
+module.exports = { GetNews, UploadFile, FetchUrl, CreateNew };
