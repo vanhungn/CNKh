@@ -167,9 +167,17 @@ const GetNews = async (req, res) => {
         ])
         const dataLength = await modelNews.aggregate([query])
         const total = Math.ceil(dataLength.length / limit)
+        const counts = data.reduce((acc, item) => {
+            acc[item.typeOf] = (acc[item.typeOf] || 0) + 1;
+            return acc;
+        }, {});
+
+        console.log(counts);
+
         return res.status(200).json({
             data,
-            total
+            total,
+            counts
         })
     } catch (error) {
         return res.status(500).json({
@@ -223,10 +231,10 @@ const DeleteNew = async (req, res) => {
                 message: "not valid"
             })
         }
-         await modelNews.findByIdAndDelete(_id)
-         return res.status(200).json({
-            message:'successfully'
-         })
+        await modelNews.findByIdAndDelete(_id)
+        return res.status(200).json({
+            message: 'successfully'
+        })
     } catch (error) {
         return res.status(500).json({ error })
     }
