@@ -215,4 +215,20 @@ const UpdateNews = async (req, res) => {
         })
     }
 }
-module.exports = { UpdateNews, GetDetailNews, GetNews, UploadFile, FetchUrl, CreateNew };
+const DeleteNew = async (req, res) => {
+    try {
+        const { _id } = req.params
+        if (!_id) {
+            return res.status(400).json({
+                message: "not valid"
+            })
+        }
+         await modelNews.findByIdAndDelete(_id)
+         return res.status(200).json({
+            message:'successfully'
+         })
+    } catch (error) {
+        return res.status(500).json({ error })
+    }
+}
+module.exports = { DeleteNew, UpdateNews, GetDetailNews, GetNews, UploadFile, FetchUrl, CreateNew };

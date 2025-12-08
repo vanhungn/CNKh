@@ -25,4 +25,5 @@ router.post('/update/:_id',upload.single('image'),news.UpdateNews)
 router.post('/uploadFile', upload.single('image'), news.UploadFile)
 router.post("/fetchUrl", express.json(), news.FetchUrl);
 router.post('/create', upload.single('image'), news.CreateNew)
+router.delete('/delete/:_id',news.DeleteNew)
 module.exports = router
