@@ -189,4 +189,30 @@ const GetDetailNews = async (req, res) => {
         return res.status(500).json({ error })
     }
 }
-module.exports = { GetDetailNews, GetNews, UploadFile, FetchUrl, CreateNew };
+const UpdateNews = async (req, res) => {
+    try {
+        const { _id } = req.params
+        const { note, title, typeOf, content, img } = req.body
+        const file = req.file
+        if (!_id || !content || !typeOf || !note || !title) {
+            return res.status(400).json({ message: "not valid" });
+        }
+        const data = await modelNews.findById(_id)
+        console.log(img)
+        if (file) {
+            const result = await cloudinary.uploader.upload(file?.path);
+            data.img = { etag: result?.etag, url: result?.secure_url };
+        } else if (img) {
+            data.img = JSON.parse(img)
+        }
+        await data.save()
+        return res.status(200).json({
+            message: "successfully"
+        })
+    } catch (error) {
+        return res.status(500).json({
+            message: error
+        })
+    }
+}
+module.exports = { UpdateNews, GetDetailNews, GetNews, UploadFile, FetchUrl, CreateNew };
