@@ -168,7 +168,8 @@ const GetNews = async (req, res) => {
         const totalData = await modelNews.find({})
         const dataLength = await modelNews.aggregate([query])
         const total = Math.ceil(dataLength.length / limit)
-        const counts = totalData.reduce((acc, item) => { 1
+        const counts = totalData.reduce((acc, item) => {
+            1
             acc[item.typeOf] = (acc[item.typeOf] || 0) + 1;
             return acc;
         }, {});
@@ -193,7 +194,8 @@ const GetDetailNews = async (req, res) => {
             return res.status(400).json({ message: "not valid" })
         }
         const data = await modelNews.findById(_id)
-        return res.status(200).json({ data })
+        const dataSuggest = await modelNews.find({ typeOf: data.typeOf }).select(['title', 'img', 'note', 'createdAt']).skip(0).limit(3)
+        return res.status(200).json({ data, dataSuggest })
     } catch (error) {
         return res.status(500).json({ error })
     }
@@ -240,4 +242,5 @@ const DeleteNew = async (req, res) => {
         return res.status(500).json({ error })
     }
 }
+
 module.exports = { DeleteNew, UpdateNews, GetDetailNews, GetNews, UploadFile, FetchUrl, CreateNew };
