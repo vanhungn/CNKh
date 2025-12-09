@@ -108,21 +108,8 @@ const CreateNew = async (req, res) => {
         const existing = await modelNews.findOne({ title });
         console.log(result)
         if (existing) {
-            const isSame = isEqual(existing.content, parsedContent);
+            return res.status(406).json({ message: "valid" });
 
-            if (isSame && existing.note === note && existing.typeOf === typeOf && existing.img.etag === result.etag) {
-                return res.status(406).json({ message: "valid" });
-            }
-
-            existing.img = { etag: result.etag, url: result.secure_url };
-            existing.note = note;
-            existing.typeOf = typeOf;
-            existing.content = parsedContent;
-
-            await existing.save();
-            return res.status(200).json({
-                message: "updated successfully"
-            });
         }
 
         await modelNews.create({
@@ -194,7 +181,7 @@ const GetDetailNews = async (req, res) => {
             return res.status(400).json({ message: "not valid" })
         }
         const data = await modelNews.findById(_id)
-        const dataSuggest = await modelNews.find({ typeOf: data.typeOf }).select(['title', 'img', 'note', 'createdAt']).skip(0).limit(3)
+        const dataSuggest = await modelNews.find({ typeOf: data.typeOf, _id: { $ne: _id } }).select(['title', 'img', 'note', 'createdAt']).skip(0).limit(3)
         return res.status(200).json({ data, dataSuggest })
     } catch (error) {
         return res.status(500).json({ error })
@@ -207,6 +194,11 @@ const UpdateNews = async (req, res) => {
         const file = req.file
         if (!_id || !content || !typeOf || !note || !title) {
             return res.status(400).json({ message: "not valid" });
+        }
+        const existing = await modelNews.findOne({ title });
+        if (existing) {
+            return res.status(406).json({ message: "valid" });
+
         }
         const data = await modelNews.findById(_id)
         console.log(img)
