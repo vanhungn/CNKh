@@ -167,7 +167,7 @@ const GetNews = async (req, res) => {
         ])
         const dataLength = await modelNews.aggregate([query])
         const total = Math.ceil(dataLength.length / limit)
-        const counts = data.reduce((acc, item) => {
+        const counts = dataLength.reduce((acc, item) => {
             acc[item.typeOf] = (acc[item.typeOf] || 0) + 1;
             return acc;
         }, {});
