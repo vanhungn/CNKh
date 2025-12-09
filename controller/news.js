@@ -172,7 +172,7 @@ const GetNews = async (req, res) => {
             return acc;
         }, {});
 
-        console.log(counts);
+
 
         return res.status(200).json({
             data,
