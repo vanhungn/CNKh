@@ -165,14 +165,15 @@ const GetNews = async (req, res) => {
             { $skip: (skip - 1) * limit },
             { $limit: limit }
         ])
+        const totalData = await modelNews.find({})
         const dataLength = await modelNews.aggregate([query])
         const total = Math.ceil(dataLength.length / limit)
-        const counts = dataLength.reduce((acc, item) => {
+        const counts = totalData.reduce((acc, item) => { 1
             acc[item.typeOf] = (acc[item.typeOf] || 0) + 1;
             return acc;
         }, {});
 
-
+        console.log(counts);
 
         return res.status(200).json({
             data,
