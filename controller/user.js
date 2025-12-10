@@ -43,6 +43,11 @@ const LoginAdmin = async (req, res) => {
                 message: "Not exist"
             })
         }
+        if (user.role !== "admin") {
+            return res.status(402).json({
+                message: "you are not an admin"
+            })
+        }
         const isPassword = await bcrypt.compare(password, user.password)
         if (!isPassword) {
             return res.status(403).json({

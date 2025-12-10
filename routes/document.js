@@ -69,7 +69,7 @@ const upload3 = multer({
 });
 router.get('/export/:_id', verifyToken, document.ExportDocument)
 router.get('/', document.GetNameDocument)
-router.get('/list', verifyToken, document.GetListDocument)
+router.get('/list', verifyToken,checkRole, document.GetListDocument)
 router.get('/detail/:_id', document.GetDocumentDetail)
 router.get('/docx/:_idCourse/:_idDocx', verifyToken, document.GetDocumentCourse)
 router.post('/create', verifyToken, checkRole, upload3.fields([{ name: "file", maxCount: 10 }, { name: "avatar", maxCount: 1 }]), document.CreateFile)

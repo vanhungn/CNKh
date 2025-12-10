@@ -4,7 +4,7 @@ require('dotenv').config();
 const Verify = (req, res, next) => {
     try {
         const token = req.headers['authorization'];
-
+        
         if (!token) {
             return res.status(400).json({
                 message: "Token is incorrect"
