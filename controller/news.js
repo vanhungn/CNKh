@@ -84,6 +84,26 @@ const FetchUrl = async (req, res) => {
         });
     }
 };
+const uploadVideo = async (req, res) => {
+    try {
+        const file = req.file
+        const result = await cloudinary.uploader.upload(file.path, {
+            resource_type: 'video',
+            folder: 'videos',
+            upload_preset: 'video_school_171'
+        });
+
+
+       return res.json({
+            success: 1,
+            file: {
+                url: result.secure_url
+            }
+        });
+    } catch (error) {
+        return res.status(500).json({ error })
+    }
+}
 const CreateNew = async (req, res) => {
     try {
         const { note, title, typeOf, content } = req.body;
@@ -234,4 +254,4 @@ const DeleteNew = async (req, res) => {
     }
 }
 
-module.exports = { DeleteNew, UpdateNews, GetDetailNews, GetNews, UploadFile, FetchUrl, CreateNew };
+module.exports = { uploadVideo, DeleteNew, UpdateNews, GetDetailNews, GetNews, UploadFile, FetchUrl, CreateNew };
