@@ -5,7 +5,7 @@ const axios = require("axios");
 const os = require("os"); // Bạn thiếu import
 const modelNews = require("../modal/news")
 const isEqual = require('lodash.isequal')
-
+require('dotenv').config()
 
 const UploadFile = async (req, res) => {
     try {
@@ -90,7 +90,7 @@ const uploadVideo = async (req, res) => {
         const result = await cloudinary.uploader.upload(file.path, {
             resource_type: 'video',
             folder: 'videos',
-            upload_preset: 'video_school_171'
+            upload_preset: process.env.PRESET
         });
 
 

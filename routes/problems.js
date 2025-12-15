@@ -9,7 +9,7 @@ router.get('/algorithm', verifyToken, checkRole, algorithm.GetAlgorithm)
 router.post('/update/:_id', verifyToken, checkRole, algorithm.UpdateAlgorithm)
 router.delete('/delete/:_id', verifyToken, checkRole, algorithm.DeleteProblem)
 //problem
-router.get('/', verifyToken, problem.GetProblem)    
+router.get('/', problem.GetProblem)
 router.get('/detail/:_id', verifyToken, problem.GetProblemDetail)
 router.post('/create', verifyToken, problem.CreatePractice)
 

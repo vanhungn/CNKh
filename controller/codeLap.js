@@ -59,20 +59,28 @@ const CreatePractice = async (req, res) => {
 }
 const GetProblem = async (req, res) => {
     try {
+        const limit = parseInt(req.query.limit) || 10
+        const skip = parseInt(req.query.skip) || 1
         const search = req.query.search || ""
         const typeOf = req.query.typeOf
-        const data = await modalProblem.aggregate([
-            {
-                $match: {
-                    ...(typeOf && { typeOf }),
-                    $or: [
-                        { title: { $regex: search } }
-                    ]
-                }
+        const query = {
+            $match: {
+                ...(typeOf && { typeOf }),
+                $or: [
+                    { title: { $regex: search } }
+                ]
             }
+        }
+        const data = await modalProblem.aggregate([
+            query, { $sort: { createAt: -1 } },
+            { $skip: (skip - 1) * limit },
+            { $limit: limit }
         ])
+        const dataLength = await modalProblem.aggregate([query])
+
+        const total = Math.ceil(dataLength.length / limit)
         return res.status(200).json({
-            data
+            data, total
         })
     } catch (error) {
         return res.status(500).json({
