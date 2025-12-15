@@ -21,7 +21,7 @@ const CreateContact = async (req, res) => {
 const GetContact = async (req, res) => {
     try {
         const sort = parseInt(req.query.sort) || -1
-        const search = req.query.search || ""
+        const search = req.query.search.trim() || ""
         const skip = parseInt(req.query.skip) || 1
         const limit = parseInt(req.query.limit) || 10
         const query = {

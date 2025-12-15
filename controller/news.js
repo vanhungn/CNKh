@@ -155,7 +155,7 @@ const GetNews = async (req, res) => {
         const skip = parseInt(req.query.skip) || 1
         const limit = parseInt(req.query.limit) || 10
         const typeOf = req.query.typeOf
-        const search = req.query.search || ""
+        const search = req.query.search.trim() || ""
         const sort = req.query.sort || -1
         const query = {
             $match: {

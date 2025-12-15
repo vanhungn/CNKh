@@ -61,7 +61,7 @@ const GetProblem = async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 10
         const skip = parseInt(req.query.skip) || 1
-        const search = req.query.search || ""
+        const search = req.query.search.trim() || ""
         const typeOf = req.query.typeOf
         const query = {
             $match: {

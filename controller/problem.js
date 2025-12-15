@@ -3,7 +3,7 @@ const GetAlgorithm = async (req, res) => {
     try {
         const skip = parseInt(req.query.skip) || 1
         const limit = parseInt(req.query.limit) || 10
-        const search = req.query.search || ""
+        const search = req.query.search.trim() || ""
         const querys = {
             $match: {
                 $or: [
