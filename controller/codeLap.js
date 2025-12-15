@@ -67,7 +67,7 @@ const GetProblem = async (req, res) => {
             $match: {
                 ...(typeOf && { typeOf }),
                 $or: [
-                    { title: { $regex: search } }
+                    { title: { $regex: search,$options:"i" } }
                 ]
             }
         }
