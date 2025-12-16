@@ -1,3 +1,4 @@
+const { default: mongoose } = require('mongoose')
 const modelMark = require('../modal/mark')
 const CreateMark = async (req, res) => {
     try {
@@ -7,7 +8,18 @@ const CreateMark = async (req, res) => {
                 message: "not valid"
             })
         }
-        await modelMark.create({ userId, theoryId, core })
+        const check = await modelMark.findOne({
+            userId: new mongoose.Types.ObjectId(userId),
+            theoryId: new mongoose.Types.ObjectId(theoryId)
+        })
+        if (check) {
+            check.core = core
+            await check.save()
+        } else {
+            await modelMark.create({ userId, theoryId, core })
+
+        }
+
         return res.status(200).json({
             message: "successfully"
         })
@@ -86,7 +98,7 @@ const DeleteMark = async (req, res) => {
         }
         await modelMark.findByIdAndDelete(_id)
         return res.status(200).json({
-            message:"successfully"
+            message: "successfully"
         })
     } catch (error) {
         return res.status(500).json({ error })
