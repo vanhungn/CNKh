@@ -15,7 +15,7 @@ const GetTheory = async (req, res) => {
         const { _id } = req.params
         const skip = parseInt(req.query.skip) || 1
         const limit = parseInt(req.query.limit) || 10
-        const search = req.query.search.trim() || ""
+        const search = (req.query.search || "").trim()
         if (!_id) {
             return res.status(400).json({
                 message: "Valid"

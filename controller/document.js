@@ -131,7 +131,7 @@ const GetNameDocument = async (req, res) => {
     try {
         const skip = parseInt(req.query.skip) || 1
         const limit = parseInt(req.query.limit) || 10
-        const search = req.query.search.trim() || ""
+         const search = (req.query.search || "").trim()
         const query = {
             $match: {
                 $or: [
@@ -422,7 +422,7 @@ const GetListDocument = async (req, res) => {
     try {
         const skip = parseInt(req.query.skip) || 1
         const limit = parseInt(req.query.limit) || 10
-        const search = req.query.search.trim() || "";
+         const search = (req.query.search || "").trim()
 
         const query = {
             $match: {
@@ -451,7 +451,7 @@ const GetDocumentDetail = async (req, res) => {
     try {
 
         const { _id } = req.params
-        const search = req.query.search.trim() || "";
+        const search = (req.query.search || "").trim()
         if (!_id) {
             return res.status(400).json({
                 message: "valid"
@@ -547,7 +547,8 @@ const DeleteDocument = async (req, res) => {
                 message: "valid"
             })
         }
-        await modalDocument.findByIdAndDelete({ _id })
+        await modalDocument.findByIdAndDelete( _id )
+        await modalTheory.deleteMany({ idCourse: _id })
         return res.status(200).json({
             message: "successfully"
         })
@@ -565,12 +566,12 @@ const UpdateDocument = async (req, res) => {
                 message: "Not valid"
             })
         }
-        const check = await modalDocument.findOne({codeCourse,  _id: { $ne: _id }})
+        const check = await modalDocument.findOne({ codeCourse, _id: { $ne: _id } })
 
-        
-        if(check){
+
+        if (check) {
             return res.status(403).json({
-                message:"Exist"
+                message: "Exist"
             })
         }
         const update = await modalDocument.findByIdAndUpdate(_id, { course, codeCourse }, { new: true })

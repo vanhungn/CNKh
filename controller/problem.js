@@ -3,7 +3,7 @@ const GetAlgorithm = async (req, res) => {
     try {
         const skip = parseInt(req.query.skip) || 1
         const limit = parseInt(req.query.limit) || 10
-        const search = req.query.search.trim() || ""
+        const search = (req.query.search || "").trim()
         const querys = {
             $match: {
                 $or: [
@@ -42,26 +42,26 @@ const UpdateAlgorithm = async (req, res) => {
         )
         return res.status(200).json({
             message: "successfully",
-            
+
         })
     } catch (error) {
         return res.status(500).json({ error })
     }
 }
-const DeleteProblem = async(req,res) =>{
+const DeleteProblem = async (req, res) => {
     try {
-        const {_id} = req.params
-        if(!_id){
+        const { _id } = req.params
+        if (!_id) {
             return res.status(400).json({
-                message:"Not valid"
+                message: "Not valid"
             })
         }
         await modalProblem.findByIdAndDelete(_id)
         return res.status(200).json({
-            message:"successfully"
+            message: "successfully"
         })
     } catch (error) {
-        return res.status(500).json({error})
+        return res.status(500).json({ error })
     }
 }
-module.exports = { DeleteProblem,GetAlgorithm, UpdateAlgorithm }
+module.exports = { DeleteProblem, GetAlgorithm, UpdateAlgorithm }

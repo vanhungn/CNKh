@@ -77,6 +77,6 @@ router.post('/import/:_id', verifyToken, checkRole, upload2.single('file'), docu
 router.post('/create_docx/:_id', verifyToken, checkRole, upload.array('file', 10), document.CreateDocx)
 router.post('/update/:_id', verifyToken, checkRole, document.UpdateDocument)
 router.delete('/docx_delete', verifyToken, checkRole, document.DeleteDocx)
-router.delete('/delete/:_id', verifyToken, checkRole, document.DeleteDocument)
+router.delete('/delete/:_id', document.DeleteDocument)
 
 module.exports = router

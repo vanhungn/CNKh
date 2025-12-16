@@ -40,7 +40,7 @@ const GetTheoryChapter = async (req, res) => {
     try {
         const skip = parseInt(req.query.skip) || 1;
         const limit = parseInt(req.query.limit) || 12;
-        const search = req.query.search.trim() || ""
+        const search = (req.query.search || "").trim()
         const query = {
             $match: {
                 $or: [
