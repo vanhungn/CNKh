@@ -38,9 +38,28 @@ const CreateTheory = async (req, res) => {
 
 const GetTheoryChapter = async (req, res) => {
     try {
-        const listChapter = await modalTheory.find({});
+        const skip = parseInt(req.query.skip) || 1;
+        const limit = parseInt(req.query.limit) || 12;
+        const search = req.query.search.trim() || ""
+        const query = {
+            $match: {
+                $or: [
+                    { chapter: { $regex: search, $options: "i" } }
+                ]
+            }
+
+        }
+        const listChapter = await modalTheory.aggregate([
+            query,
+            { $sort: { createdAt: -1 } },
+            { $skip: (skip - 1) * limit },
+            { $limit: (limit) }
+        ])
+
+        const chapterLength = await modalTheory.aggregate([query])
+        const total = Math.ceil(chapterLength.length / limit)
         const data = listChapter.map(ch => ({ _id: ch._id, title: ch.chapter }));
-        return res.status(200).json({ data });
+        return res.status(200).json({ data, total });
     } catch (error) {
         console.error(error);
         return res.status(500).json({
