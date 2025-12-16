@@ -1,6 +1,7 @@
 const modalTheory = require('../modal/thoery')
 const cloudinary = require('../config/cloudinaryConfig');
 const e = require('cors');
+const { default: mongoose } = require('mongoose');
 const uploadToCloudinary = (buffer) => {
     return new Promise((resolve, reject) => {
         const stream = cloudinary.uploader.upload_stream((error, result) => {
@@ -41,8 +42,10 @@ const GetTheoryChapter = async (req, res) => {
         const skip = parseInt(req.query.skip) || 1;
         const limit = parseInt(req.query.limit) || 12;
         const search = (req.query.search || "").trim()
+        const { _id } = req.params
         const query = {
             $match: {
+                idCourse: new mongoose.Types.ObjectId(_id),
                 $or: [
                     { chapter: { $regex: search, $options: "i" } }
                 ]

@@ -1,8 +1,10 @@
 const modalTheory = require('../modal/thoery')
+const modelMark = require('../modal/mark')
 const mammoth = require('mammoth');
 const { Document, Packer, Paragraph, TextRun } = require('docx');
 const modalDocument = require('../modal/document')
-const cloudinary = require('../config/cloudinaryConfig')
+const cloudinary = require('../config/cloudinaryConfig');
+const { model } = require('mongoose');
 
 
 const CreateFile = async (req, res) => {
@@ -131,7 +133,7 @@ const GetNameDocument = async (req, res) => {
     try {
         const skip = parseInt(req.query.skip) || 1
         const limit = parseInt(req.query.limit) || 10
-         const search = (req.query.search || "").trim()
+        const search = (req.query.search || "").trim()
         const query = {
             $match: {
                 $or: [
@@ -422,7 +424,7 @@ const GetListDocument = async (req, res) => {
     try {
         const skip = parseInt(req.query.skip) || 1
         const limit = parseInt(req.query.limit) || 10
-         const search = (req.query.search || "").trim()
+        const search = (req.query.search || "").trim()
 
         const query = {
             $match: {
@@ -547,8 +549,12 @@ const DeleteDocument = async (req, res) => {
                 message: "valid"
             })
         }
-        await modalDocument.findByIdAndDelete( _id )
+        await modalDocument.findByIdAndDelete(_id)
         await modalTheory.deleteMany({ idCourse: _id })
+        const theory = await modalTheory.find({ idCourse: _id })
+        const id = theory.map((e) => e._id)
+
+        await modelMark.deleteOne({ theoryId: { $in: id } })
         return res.status(200).json({
             message: "successfully"
         })
