@@ -20,7 +20,6 @@
     "express": "~4.16.1",
     "express-jwt": "^8.5.1",
     "http-errors": "~1.6.3",
-    "jade": "~1.11.0",
     "jsonwebtoken": "^9.0.2",
     "jwks-rsa": "^3.2.0",
     "lodash.isequal": "^4.5.0",
