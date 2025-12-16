@@ -43,15 +43,24 @@ const GetMark = async (req, res) => {
                     localField: "userId",
                     foreignField: "_id",
                     as: "infoUser"
-                }
+                },
+
+
+            },
+            {
+                $lookup: {
+                    from: "thoerys",
+                    localField: "theoryId",
+                    foreignField: "_id",
+                    as: "infoTheory"
+                },
             },
             { $unwind: "$infoUser" },
-
+            { $unwind: "$infoTheory" },
             {
-
                 $match: {
 
-                    ...(_id && { userId: _id }),
+                    ...(_id && { userId: new mongoose.Types.ObjectId(_id) }),
                     $or: [
                         { "infoUser.name": { $regex: search === "" ? ".*" : search, $options: "i" } }
                     ]
