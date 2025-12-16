@@ -1,4 +1,5 @@
 const modalTheory = require('../modal/thoery')
+const modalDocument = require('../modal/document')
 const cloudinary = require('../config/cloudinaryConfig');
 const e = require('cors');
 const { default: mongoose } = require('mongoose');
@@ -43,6 +44,11 @@ const GetTheoryChapter = async (req, res) => {
         const limit = parseInt(req.query.limit) || 12;
         const search = (req.query.search || "").trim()
         const { _id } = req.params
+        if (!_id) {
+            return res.status(400).json({
+                message: "not valid"
+            })
+        }
         const query = {
             $match: {
                 idCourse: new mongoose.Types.ObjectId(_id),
@@ -61,7 +67,8 @@ const GetTheoryChapter = async (req, res) => {
 
         const chapterLength = await modalTheory.aggregate([query])
         const total = Math.ceil(chapterLength.length / limit)
-        const data = listChapter.map(ch => ({ _id: ch._id, title: ch.chapter }));
+        const chapter = await modalDocument.findById(_id)
+        const data = listChapter.map(ch => ({ _id: ch._id, title: ch.chapter, chapter: chapter.course }));
         return res.status(200).json({ data, total });
     } catch (error) {
         console.error(error);
