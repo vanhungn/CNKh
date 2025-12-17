@@ -9,7 +9,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 
 router.get('/question/:_id', verifyToken, theoryAdmin.GetListQuestion)
-router.post('/update/:idCourse', verifyToken, checkRole, upload.array("imgUrl"), theoryAdmin.UpdateTheory)
+router.post('/update/:idCourse', upload.array("imgUrl"), theoryAdmin.UpdateTheory)
 router.delete('/delete_item/:_id/:idCourse', checkRole, verifyToken, theoryAdmin.RemoveItemList)
 router.delete('/delete/:_id', verifyToken, checkRole, theoryAdmin.DeleteTheory)
 //theory

@@ -101,6 +101,12 @@ const UpdateTheory = async (req, res) => {
                 list[idx].imgUrl = result.secure_url;
             }
         }
+        list = list.map(q => {
+            if (!mongoose.Types.ObjectId.isValid(q._id)) {
+                delete q._id;
+            }
+            return q;
+        });
 
         const data = await modalTheory.findByIdAndUpdate(
             idCourse,
