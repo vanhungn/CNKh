@@ -3,7 +3,7 @@ const modelMark = require('../modal/mark')
 const CreateMark = async (req, res) => {
     try {
         const { userId, theoryId, core } = req.body
-        if (!userId || !theoryId || !core) {
+        if (!userId || !theoryId || core<0) {
             return res.status(400).json({
                 message: "not valid"
             })
