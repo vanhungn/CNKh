@@ -90,20 +90,35 @@ const UpdateTheory = async (req, res) => {
             return res.status(400).json({ message: "chapter và list không được để trống" });
         }
 
-        list = JSON.parse(list);
-        index = JSON.parse(index); // array các index của list cần upload ảnh
+        // Parse an toàn
+        list = typeof list === 'string' ? JSON.parse(list) : list;
+        index = typeof index === 'string' ? JSON.parse(index) : index;
 
-        // req.files.length <= index.length
-        for (let i = 0; i < req.files.length; i++) {
-            const idx = index[i]; // lấy index thực sự trong list
-            if (idx !== undefined && list[idx]) {
-                const result = await uploadToCloudinary(req.files[i].buffer);
-                list[idx].imgUrl = result.secure_url;
+        // Validate là array
+        if (!Array.isArray(list)) {
+            return res.status(400).json({ message: "list phải là array" });
+        }
+        if (!Array.isArray(index)) {
+            return res.status(400).json({ message: "index phải là array" });
+        }
+
+        // Kiểm tra req.files có tồn tại không
+        if (req.files && req.files.length > 0) {
+            // Upload ảnh cho các câu hỏi tương ứng
+            for (let i = 0; i < req.files.length; i++) {
+                const idx = index[i];
+                if (idx !== undefined && idx < list.length && list[idx]) {
+                    const result = await uploadToCloudinary(req.files[i].buffer);
+                    list[idx].imgUrl = result.secure_url;
+                }
             }
         }
+
+        // Xử lý _id: giữ lại _id hợp lệ, xóa _id không hợp lệ
         list = list.map(q => {
-            if (!mongoose.Types.ObjectId.isValid(q._id)) {
-                delete q._id;
+            if (q._id && !mongoose.Types.ObjectId.isValid(q._id)) {
+                const { _id, ...rest } = q;
+                return rest;
             }
             return q;
         });
@@ -111,13 +126,20 @@ const UpdateTheory = async (req, res) => {
         const data = await modalTheory.findByIdAndUpdate(
             idCourse,
             { chapter, list },
-            { new: true }
+            { new: true, runValidators: true }
         );
+
+        if (!data) {
+            return res.status(404).json({ message: "Không tìm thấy course" });
+        }
 
         return res.status(200).json({ data });
     } catch (err) {
-        console.error(err);
-        return res.status(500).json({ err });
+        console.error('Full error:', err);
+        return res.status(500).json({
+            message: "Có lỗi xảy ra khi cập nhật",
+            error: err.message
+        });
     }
 };
 const RemoveItemList = async (req, res) => {
