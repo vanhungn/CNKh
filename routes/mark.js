@@ -3,6 +3,7 @@ const router = express.Router()
 const mark = require('../controller/mark')
 
 router.get('/', mark.GetMark)
+router.get('/admin',mark.GetMarkAdmin)
 router.post('/update/:_id', mark.UpdateMark)
 router.post('/create', mark.CreateMark)
 router.delete('/delete/:_id', mark.DeleteMark)

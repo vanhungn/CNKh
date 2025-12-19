@@ -2,6 +2,7 @@ const { default: mongoose } = require('mongoose')
 const modelMark = require('../modal/mark')
 const modelUser = require('../modal/user')
 const modelDocument = require('../modal/document')
+const modelTheory = require('../modal/thoery')
 const CreateMark = async (req, res) => {
     try {
         const { userId, theoryId, core } = req.body
@@ -84,6 +85,100 @@ const GetMark = async (req, res) => {
         return res.status(500).json({ error })
     }
 }
+const GetMarkAdmin = async (req, res) => {
+    try {
+        const skip = parseInt(req.query.skip) || 1
+        const limit = parseInt(req.query.limit) || 10
+        const classesQuery = req.query.classes
+        const courseQuery = req.query.course
+        let document = {}
+        let countTheory = 0
+        if (courseQuery) {
+            const docum = await modelDocument.findOne({ codeCourse: courseQuery })
+            document = docum
+            const theoryOfDocument = await modelTheory.find({
+                idCourse: docum._id
+            })
+            countTheory = theoryOfDocument.length
+        }
+        const query = [
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "userId",
+                    foreignField: "_id",
+                    as: "infoUser"
+                },
+
+
+            },
+            {
+                $lookup: {
+                    from: "thoerys",
+                    localField: "theoryId",
+                    foreignField: "_id",
+                    as: "infoTheory"
+                },
+            },
+            { $unwind: "$infoUser" },
+            { $unwind: "$infoTheory" },
+            { $project: { "infoUser.password": 0 } },
+            { $project: { "infoTheory.list": 0 } },
+            {
+                $match: {
+                    ...(classesQuery && { "infoUser.classes": classesQuery }),
+                    ...(courseQuery && { "infoTheory.idCourse": document._id }),
+                }
+            },
+            {
+                $group: {
+                    _id: "$userId",
+                    infoUser: { $first: "$infoUser" },
+                    totalScore: { $sum: "$core" },
+                    doneCount: { $sum: 1 },
+
+                }
+            },
+            {
+                $project: {
+                    infoUser: 1,
+                    avgCore: {
+                        $round: [
+                            {
+                                $divide: ["$totalScore", countTheory] // 5 = tổng số bài
+                            },
+                            1
+                        ]
+                    },
+                    progress: {
+                        $concat: [
+                            { $toString: "$doneCount" },
+                            "/",
+                            { $toString: countTheory }
+                        ]
+                    },
+                    nameCourse: {
+                        $concat: [
+                            { $toString: document.course }
+                        ]
+                    },
+                    codeCourse: {
+                        $concat: [
+                            { $toString: document.codeCourse }
+                        ]
+                    }
+                }
+            }
+
+        ]
+        const data = await modelMark.aggregate([...query])
+        return res.status(200).json({
+            data
+        })
+    } catch (error) {
+        return res.status(500).json({ error })
+    }
+}
 const UpdateMark = async (req, res) => {
     try {
         const { _id } = req.params
@@ -118,4 +213,4 @@ const DeleteMark = async (req, res) => {
         return res.status(500).json({ error })
     }
 }
-module.exports = { CreateMark, GetMark, UpdateMark, DeleteMark }
+module.exports = { GetMarkAdmin, CreateMark, GetMark, UpdateMark, DeleteMark }
