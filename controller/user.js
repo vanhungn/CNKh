@@ -95,4 +95,13 @@ const UpdateUser = async (req, res) => {
         })
     }
 }
+const GetUser=async(req,res)=>{
+    try {
+        
+    } catch (error) {
+        return res.status(500).json({
+            error
+        })
+    }
+}
 module.exports = { RegisterAdmin, LoginAdmin, UpdateUser }

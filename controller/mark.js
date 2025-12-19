@@ -1,9 +1,11 @@
 const { default: mongoose } = require('mongoose')
 const modelMark = require('../modal/mark')
+const modelUser = require('../modal/user')
+const modelDocument = require('../modal/document')
 const CreateMark = async (req, res) => {
     try {
         const { userId, theoryId, core } = req.body
-        if (!userId || !theoryId || core<0) {
+        if (!userId || !theoryId || core < 0) {
             return res.status(400).json({
                 message: "not valid"
             })
@@ -34,7 +36,7 @@ const GetMark = async (req, res) => {
         const skip = parseInt(req.query.skip) || 1
         const limit = parseInt(req.query.limit) || 10
         const search = (req.query.search || "").trim()
-        const { _id } = req.params
+        const { _id } = req.query
 
         const query = [
             {
@@ -57,6 +59,8 @@ const GetMark = async (req, res) => {
             },
             { $unwind: "$infoUser" },
             { $unwind: "$infoTheory" },
+            { $project: { "infoUser.password": 0 } },
+            { $project: { "infoTheory.list": 0 } },
             {
                 $match: {
 
@@ -67,13 +71,14 @@ const GetMark = async (req, res) => {
                 }
             }
         ]
-
+        const classes = await modelUser.distinct('classes')
+        const course = await modelDocument.distinct('course')
         const data = await modelMark.aggregate([...query,
         { $skip: (skip - 1) * limit },
         { $limit: limit }
         ])
         return res.status(200).json({
-            data
+            data, classes, course, length: data.length
         })
     } catch (error) {
         return res.status(500).json({ error })
