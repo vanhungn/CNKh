@@ -73,7 +73,9 @@ const GetMark = async (req, res) => {
             }
         ]
         const classes = await modelUser.distinct('classes')
-        const course = await modelDocument.distinct('course')
+        const course = await modelDocument.find({})
+          
+        
         const data = await modelMark.aggregate([...query,
         { $skip: (skip - 1) * limit },
         { $limit: limit }
