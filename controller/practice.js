@@ -27,7 +27,13 @@ const CreateTheory = async (req, res) => {
             const result = await uploadToCloudinary(req.files[i].buffer);
             list[i].imgUrl = result.secure_url;
         }
-
+        list = list.map(q => {
+            if (q._id && !mongoose.Types.ObjectId.isValid(q._id)) {
+                const { _id, ...rest } = q;
+                return rest;
+            }
+            return q;
+        });
         const data = await modalTheory.create({ chapter, list, idCourse });
 
         return res.status(200).json({ data });
