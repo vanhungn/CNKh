@@ -24,22 +24,39 @@ const MicrosoftLogin = async (req, res) => {
 
 
         let id = "";
+        let role = "";
+        let classes = "";
+        let userCode = "";
         const check = await modelUser.findOne({ email: data.preferred_username });
         id = check?._id;
-
+        role = check?.role
+        classes = check?.classes
+        userCode = check?.userCode
         if (!check) {
             const create = await modelUser.create({
                 name: data.name,
                 email: data.preferred_username,
                 role: "student",
-                password: ""
+                password: "",
+                class: "",
+                userCode: ""
             });
             id = create._id;
+            role = create.role
+            classes = create?.classes
+            userCode = create?.userCode
         }
 
         return res.status(200).json({
             token: accessToken,
-            data: { _id: id, name: data.name, email: data.preferred_username }
+            data: {
+                _id: id,
+                name: data.name,
+                email: data.preferred_username,
+                classes,
+                userCode,
+                role
+            }
         });
 
     } catch (error) {

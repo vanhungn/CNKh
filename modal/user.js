@@ -5,7 +5,9 @@ const modelUser = new Schema({
     name: String,
     email:String,
     password:String,
-    role:String
+    role:String,
+    classes:String,
+    userCode:String
 },
 {timestamps:true},
 {collection:'users'}
