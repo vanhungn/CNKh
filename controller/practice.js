@@ -22,18 +22,17 @@ const CreateTheory = async (req, res) => {
                 message: "valid"
             })
         }
-        list = JSON.parse(list);
-        for (let i = 0; i < req.files.length; i++) {
-            const result = await uploadToCloudinary(req.files[i].buffer);
-            list[i].imgUrl = result.secure_url;
-        }
-        list = list.map(q => {
-            if (q._id && !mongoose.Types.ObjectId.isValid(q._id)) {
-                const { _id, ...rest } = q;
-                return rest;
+        list = typeof list === 'string' ? JSON.parse(list) : list;
+        if (req.files?.length) {
+            for (let i = 0; i < req.files.length && i < list.length; i++) {
+                const result = await uploadToCloudinary(req.files[i].buffer);
+                list[i].imgUrl = result.secure_url;
             }
-            return q;
-        });
+        }
+
+
+        list = list.map(({ _id, ...rest }) => rest);
+
         const data = await modalTheory.create({ chapter, list, idCourse });
 
         return res.status(200).json({ data });

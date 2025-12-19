@@ -15,7 +15,7 @@ router.delete('/delete/:_id', verifyToken, checkRole, theoryAdmin.DeleteTheory)
 //theory
 router.get('/chapter/:_id', theory.GetTheoryChapter)
 router.get('/list/:_id', verifyToken, theory.GetTheoryList)
-router.post('/create/:idCourse', verifyToken, upload.array("imgUrl"), theory.CreateTheory)
+router.post('/create/:idCourse', upload.array("imgUrl"), theory.CreateTheory)
 router.get('/:_id', verifyToken, theoryAdmin.GetTheory)
 
 
