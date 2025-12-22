@@ -61,13 +61,16 @@ const LoginAdmin = async (req, res) => {
         }
         const accessToken = await createToken(payload, "1m", 'accessToken')
         const refreshToken = await createToken(payload, "7d", 'refreshToken')
-        res.cookie('refreshToken', refreshToken, {
+        const isProd = process.env.NODE_ENV === "production";
+
+        res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: "strict",
-            path: '/',
+            secure: isProd,
+            sameSite: isProd ? "none" : "lax",
+            path: "/",
             maxAge: 7 * 24 * 60 * 60 * 1000
-        })
+        });
+
         return res.status(200).json({
             accessToken,
             data: payload
@@ -95,13 +98,5 @@ const UpdateUser = async (req, res) => {
         })
     }
 }
-const GetUser=async(req,res)=>{
-    try {
-        
-    } catch (error) {
-        return res.status(500).json({
-            error
-        })
-    }
-}
+
 module.exports = { RegisterAdmin, LoginAdmin, UpdateUser }
