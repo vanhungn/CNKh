@@ -16,9 +16,9 @@ const uploadToCloudinary = (buffer) => {
 const CreateTheory = async (req, res) => {
     try {
         const { idCourse } = req.params;
-        let { chapter, list, explain } = req.body;
+        let { chapter, list } = req.body;
         if (!chapter, !list) {
-            return res.status(400).json({
+            return res.status(400).json({   
                 message: "valid"
             })
         }
@@ -33,7 +33,7 @@ const CreateTheory = async (req, res) => {
 
         list = list.map(({ _id, ...rest }) => rest);
 
-        const data = await modalTheory.create({ chapter, list, idCourse, explain: explain || "" });
+        const data = await modalTheory.create({ chapter, list, idCourse });
 
         return res.status(200).json({ data });
     } catch (err) {

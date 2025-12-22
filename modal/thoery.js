@@ -13,10 +13,11 @@ const modalTheory = new Schema({
                     key: String,
                 }
             ],
-            answer: String
+            answer: String,
+            explain:String
         }
     ],
     idCourse: { type: mongoose.Types.ObjectId, ref: 'documents' },
-    explain: String
+
 }, { timestamps: true }, { collection: 'theorys' })
 module.exports = mongoose.model('thoerys', modalTheory)
