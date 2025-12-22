@@ -59,7 +59,7 @@ const LoginAdmin = async (req, res) => {
             email: user.email,
             role: user.role
         }
-        const accessToken = await createToken(payload, "1m", 'accessToken')
+        const accessToken = await createToken(payload, "30m", 'accessToken')
         const refreshToken = await createToken(payload, "7d", 'refreshToken')
         const isProd = process.env.NODE_ENV === "production";
 
