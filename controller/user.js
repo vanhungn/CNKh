@@ -59,7 +59,7 @@ const LoginAdmin = async (req, res) => {
             email: user.email,
             role: user.role
         }
-        const accessToken = await createToken(payload, "30m", 'accessToken')
+        const accessToken = await createToken(payload, "1m", 'accessToken')
         const refreshToken = await createToken(payload, "7d", 'refreshToken')
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
