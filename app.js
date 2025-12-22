@@ -25,7 +25,6 @@ app.use(cors({
   credentials: true,
   exposedHeaders: ['Set-Cookie']
 }));
-app.options('*', cors());
 // view engine setup
 
 
