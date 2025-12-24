@@ -13,6 +13,7 @@ const MicrosoftLogin = async (req, res) => {
             email: data.preferred_username
         }, '7d', 'refreshToken');
 
+        console.log(req.secure);
 
         const isProd = process.env.NODE_ENV === "production";
 
