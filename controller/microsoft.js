@@ -14,12 +14,14 @@ const MicrosoftLogin = async (req, res) => {
         }, '7d', 'refreshToken');
 
 
-        res.cookie('refreshToken', refreshToken, {
+        const isProd = process.env.NODE_ENV === "production";
+
+        res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production', // chỉ true khi deploy
-            sameSite: 'strict',
-            path: '/',
-            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 ngày khớp với token
+            secure: isProd,
+            sameSite: isProd ? "none" : "lax",
+            path: "/",
+            maxAge: 7 * 24 * 60 * 60 * 1000
         });
 
 
