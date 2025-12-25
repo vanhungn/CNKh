@@ -215,13 +215,12 @@ const UpdateNews = async (req, res) => {
             return res.status(400).json({ message: "not valid" });
         }
         const data = await modelNews.findById(_id)
-
-        if (data.title !== title && data.typeOf !== typeOf) {
+        console.log(data.title !== title && data.typeOf !== typeOf)
+        if (data.title !== title || data.typeOf !== typeOf) {
             const existing = await modelNews.findOne({ title, typeOf });
             if (existing) {
                 return res.status(406).json({ message: "valid" });
-
-            }
+            }   
         }
         let parsedContent = content;
         if (typeof content === "string") {
@@ -232,7 +231,7 @@ const UpdateNews = async (req, res) => {
             }
         }
 
-        console.log(img)
+
         if (file) {
             const result = await cloudinary.uploader.upload(file?.path);
             data.img = { etag: result?.etag, url: result?.secure_url };
@@ -241,7 +240,7 @@ const UpdateNews = async (req, res) => {
         }
         await data.save()
         await modelNews.findByIdAndUpdate(_id, {
-            note, title, typeOf, content:parsedContent
+            note, title, typeOf, content: parsedContent
         }, { new: true })
         return res.status(200).json({
             message: "successfully"
