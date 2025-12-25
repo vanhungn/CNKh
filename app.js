@@ -17,8 +17,9 @@ const db = require('./config/db')
 var app = express();
 
 db()
-app.use(cookieParser());
 app.set('trust proxy', 1);
+app.use(cookieParser());
+
 app.use(cors({
   origin: ['http://localhost:5173',
     'http://localhost:5174',
