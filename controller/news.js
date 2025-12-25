@@ -223,7 +223,14 @@ const UpdateNews = async (req, res) => {
 
             }
         }
-
+        let parsedContent = content;
+        if (typeof content === "string") {
+            try {
+                parsedContent = JSON.parse(content);
+            } catch (err) {
+                return res.status(400).json({ message: "content JSON invalid" });
+            }
+        }
 
         console.log(img)
         if (file) {
@@ -234,7 +241,7 @@ const UpdateNews = async (req, res) => {
         }
         await data.save()
         await modelNews.findByIdAndUpdate(_id, {
-            note, title, typeOf, content
+            note, title, typeOf, content:parsedContent
         }, { new: true })
         return res.status(200).json({
             message: "successfully"
