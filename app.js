@@ -18,6 +18,7 @@ var app = express();
 
 db()
 app.use(cookieParser());
+app.set('trust proxy', 1);
 app.use(cors({
   origin: ['http://localhost:5173',
     'http://localhost:5174',
@@ -33,7 +34,6 @@ app.use(cors({
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.set("trust proxy", 1);
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/public', express.static('public'));
