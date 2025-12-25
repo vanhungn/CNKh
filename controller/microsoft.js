@@ -20,7 +20,7 @@ const MicrosoftLogin = async (req, res) => {
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
             secure: isProd,
-            sameSite: isProd ? "lax" : "none",
+            sameSite: isProd ? "none" : "lax",
             path: "/",
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
