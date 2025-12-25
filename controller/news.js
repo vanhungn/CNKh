@@ -214,12 +214,17 @@ const UpdateNews = async (req, res) => {
         if (!_id || !content || !typeOf || !note || !title) {
             return res.status(400).json({ message: "not valid" });
         }
-        const existing = await modelNews.findOne({ title, typeOf });
-        if (existing) {
-            return res.status(406).json({ message: "valid" });
-
-        }
         const data = await modelNews.findById(_id)
+
+        if (data.title !== title && data.typeOf !== typeOf) {
+            const existing = await modelNews.findOne({ title, typeOf });
+            if (existing) {
+                return res.status(406).json({ message: "valid" });
+
+            }
+        }
+
+
         console.log(img)
         if (file) {
             const result = await cloudinary.uploader.upload(file?.path);
