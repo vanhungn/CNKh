@@ -9,7 +9,7 @@ const modalDocument = new Schema({
         name: String,
         url: String,
     }],
-    avatar: String
+  
 }, { timestamps: true }, { collection: "documents" })
 
 module.exports = mongoose.model('document', modalDocument)

@@ -20,15 +20,6 @@ const CreateFile = async (req, res) => {
 
         // ✅ Lấy files từ req.files (upload.fields)
         const files = req.files['file'] || [];      // Array files
-        const avatarFile = req.files['avatar']?.[0]; // Single avatar
-
-        // Kiểm tra avatar
-        if (!avatarFile) {
-            return res.status(400).json({
-                message: "Chưa chọn avatar"
-            });
-        }
-
         // Kiểm tra files
         if (!files || files.length === 0) {
             return res.status(400).json({
@@ -43,39 +34,6 @@ const CreateFile = async (req, res) => {
                 message: "course valid"
             });
         }
-
-        // ✅ Upload AVATAR lên Cloudinary
-        const avatar = await new Promise((resolve, reject) => {
-            const originalName = avatarFile.originalname;
-            const nameWithoutExt = originalName.substring(0, originalName.lastIndexOf('.'));
-            const extension = originalName.substring(originalName.lastIndexOf('.') + 1);
-
-            const sanitizedName = nameWithoutExt
-                .normalize('NFD')
-                .replace(/[\u0300-\u036f]/g, '')
-                .replace(/đ/g, 'd').replace(/Đ/g, 'D')
-                .replace(/[^a-zA-Z0-9-_]/g, '_')
-                .toLowerCase();
-
-            const publicId = `avatars/${sanitizedName}-${Date.now()}`;
-
-            const uploadStream = cloudinary.uploader.upload_stream(
-                {
-                    resource_type: "image",  // Avatar là ảnh
-                    public_id: publicId,
-                    format: extension
-                },
-                (err, result) => {
-                    if (err) reject(err);
-                    else resolve({
-                        url: result.secure_url,
-                        name: result.public_id
-                    });
-                }
-            );
-
-            uploadStream.end(avatarFile.buffer);
-        });
 
         // ✅ Upload FILES lên Cloudinary (code cũ của bạn)
         const uploadedFiles = await Promise.all(
@@ -116,7 +74,6 @@ const CreateFile = async (req, res) => {
         await modalDocument.create({
             course,
             codeCourse,
-            avatar: avatar.url,        // ⭐ THÊM MỚI
             docx: uploadedFiles
         });
 
