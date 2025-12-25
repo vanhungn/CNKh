@@ -94,7 +94,7 @@ const uploadVideo = async (req, res) => {
         });
 
 
-       return res.json({
+        return res.json({
             success: 1,
             file: {
                 url: result.secure_url
@@ -228,6 +228,9 @@ const UpdateNews = async (req, res) => {
             data.img = JSON.parse(img)
         }
         await data.save()
+        await modelNews.findByIdAndUpdate(_id, {
+            note, title, typeOf, content
+        }, { new: true })
         return res.status(200).json({
             message: "successfully"
         })
