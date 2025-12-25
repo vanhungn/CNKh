@@ -66,7 +66,7 @@ const LoginAdmin = async (req, res) => {
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
             secure: isProd,
-            sameSite: isProd ? "none" : "lax",
+            sameSite: isProd ? "lax":"none" ,
             path: "/",
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
