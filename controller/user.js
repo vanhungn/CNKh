@@ -65,8 +65,8 @@ const LoginAdmin = async (req, res) => {
 
         res.cookie("refreshToken", refreshToken, {
             httpOnly: true,
-            secure: true,
-            sameSite: "fax",
+            secure: isProd,
+            sameSite: isProd ? "lax" : "none",      // ← CẦN vì cross-domain (KHÔNG phải "lax")
             path: "/",
             maxAge: 7 * 24 * 60 * 60 * 1000
         });
