@@ -24,7 +24,7 @@ app.use(cors({
   origin: ['http://localhost:5173',
     'http://localhost:5174',
     'https://highereducation.netlify.app',
-    'https://nvhd.netlify.app/'
+    'https://nvhd.netlify.app'
   ], // hoặc '*' nếu không dùng credentials
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
