@@ -109,7 +109,7 @@ const CreateNew = async (req, res) => {
         const { note, title, typeOf, content } = req.body;
         const file = req.file;
 
-        if (!content || !typeOf || !note || !title || !file) {
+        if (!content || !typeOf  || !title || !file) {
             return res.status(400).json({ message: "not valid" });
         }
 
@@ -135,7 +135,7 @@ const CreateNew = async (req, res) => {
             typeOf,
             img: { etag: result.etag, url: result.secure_url },
             content: parsedContent,
-            note,
+            note:note||"",
             title
         });
 
