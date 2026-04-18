@@ -211,7 +211,7 @@ const UpdateNews = async (req, res) => {
         const { _id } = req.params
         const { note, title, typeOf, content, img } = req.body
         const file = req.file
-        if (!_id || !content || !typeOf || !note || !title) {
+        if (!_id || !content || !typeOf  || !title) {
             return res.status(400).json({ message: "not valid" });
         }
         const data = await modelNews.findById(_id)
@@ -240,7 +240,7 @@ const UpdateNews = async (req, res) => {
         }
         await data.save()
         await modelNews.findByIdAndUpdate(_id, {
-            note, title, typeOf, content: parsedContent
+            note:note||"", title, typeOf, content: parsedContent
         }, { new: true })
         return res.status(200).json({
             message: "successfully"
