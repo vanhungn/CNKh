@@ -9,16 +9,16 @@ const { model } = require('mongoose');
 
 const CreateFile = async (req, res) => {
     try {
-        const { course, codeCourse } = req.body;
+        const { course, codeCourse, typeOf } = req.body;
 
         // ✅ Validate input
-        if (!course || !codeCourse) {
+        if (!course || !codeCourse || !typeOf) {
             return res.status(400).json({
                 message: "Thiếu thông tin khóa học"
             });
         }
 
-        // ✅ Lấy files từ req.files (upload.fields)
+
         const files = req.files['file'] || [];      // Array files
         // Kiểm tra files
         if (!files || files.length === 0) {
@@ -70,11 +70,12 @@ const CreateFile = async (req, res) => {
             }))
         );
 
-        // ✅ Lưu vào database (THÊM avatar)
+
         await modalDocument.create({
             course,
             codeCourse,
-            docx: uploadedFiles
+            docx: uploadedFiles,
+            typeOf
         });
 
         return res.status(200).json({
@@ -382,11 +383,14 @@ const GetListDocument = async (req, res) => {
         const skip = parseInt(req.query.skip) || 1
         const limit = parseInt(req.query.limit) || 10
         const search = (req.query.search || "").trim()
-
+        const typeOf = req.query.typeOf || ""
         const query = {
             $match: {
                 $or: [
-                    { course: { $regex: search, $options: 'i' } },
+                    {
+                        course: { $regex: search, $options: 'i' },
+                        typeOf: { $regex: typeOf, $options: 'i' }
+                    },
                 ]
             }
         }
@@ -523,8 +527,8 @@ const DeleteDocument = async (req, res) => {
 const UpdateDocument = async (req, res) => {
     try {
         const { _id } = req.params
-        const { course, codeCourse } = req.body
-        if (!course || !codeCourse) {
+        const { course, codeCourse, typeOf } = req.body
+        if (!course || !codeCourse || !typeOf) {
             return res.status(400).json({
                 message: "Not valid"
             })
@@ -537,7 +541,7 @@ const UpdateDocument = async (req, res) => {
                 message: "Exist"
             })
         }
-        const update = await modalDocument.findByIdAndUpdate(_id, { course, codeCourse }, { new: true })
+        const update = await modalDocument.findByIdAndUpdate(_id, { course, codeCourse, typeOf }, { new: true })
         return res.status(200).json({
             message: 'successfully',
             update

@@ -5,11 +5,12 @@ const modalDocument = new Schema({
 
     course: String,
     codeCourse: String,
+    typeOf: String,
     docx: [{
         name: String,
         url: String,
     }],
-  
+
 }, { timestamps: true }, { collection: "documents" })
 
 module.exports = mongoose.model('document', modalDocument)
