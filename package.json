@@ -9,6 +9,7 @@
   "dependencies": {
     "@editorjs/paragraph": "^2.11.7",
     "@editorjs/simple-image": "^1.6.0",
+    "@getbrevo/brevo": "^5.0.4",
     "axios": "^1.13.2",
     "bcrypt": "^6.0.0",
     "cloudinary": "^2.8.0",
@@ -28,7 +29,7 @@
     "morgan": "~1.9.1",
     "multer": "^2.0.2",
     "node-fetch": "^3.3.2",
-    "nodemon": "^3.1.10",
-    "sib-api-v3-sdk": "^8.5.0"
+    "nodemailer": "^8.0.7",
+    "nodemon": "^3.1.10"
   }
 }
