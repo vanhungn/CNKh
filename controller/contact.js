@@ -1,15 +1,15 @@
 const modelContact = require('../modal/contact')
-// const nodemailer = require('nodemailer');
+const nodemailer = require('nodemailer');
 require("dotenv").config();
 
-// const transporter = nodemailer.createTransport({
-//     host: 'smtp-relay.brevo.com',
-//     port: 587,
-//     auth: {
-//         user: "9808c3002@smtp-brevo.com",   // email đăng ký Brevo
-//         pass: process.env.EMAIL_API_KEY // SMTP key (khác API key)
-//     }
-// });
+const transporter = nodemailer.createTransport({
+    host: 'smtp-relay.brevo.com',
+    port: 587,
+    auth: {
+        user: "9808c3002@smtp-brevo.com",   // email đăng ký Brevo
+        pass: process.env.EMAIL_API_KEY // SMTP key (khác API key)
+    }
+});
 
 const CreateContact = async (req, res) => {
     try {
@@ -19,19 +19,19 @@ const CreateContact = async (req, res) => {
             return res.status(400).json({ success: false, message: "Not valid" });
         }
 
-        // await transporter.sendMail({
-        //     from: '"Nguyễn Văn Hùng" <vanhungnvh1712004@gmail.com>',
-        //     to: 'hungnguyenninhbinh2004@gmail.com',
-        //     subject: 'Hỗ trợ sinh viên',
-        //     html: `
-        //         <h2>Thông tin sinh viên cần hỗ trợ</h2>
-        //         <p><strong>Họ tên:</strong> ${name}</p>
-        //         <p><strong>Số điện thoại:</strong> ${phone}</p>
-        //         <p><strong>Email:</strong> ${email}</p>
-        //         <p><strong>Tiêu đề:</strong> ${title}</p>
-        //         <p><strong>Nội dung:</strong> ${content}</p>
-        //     `
-        // });
+        await transporter.sendMail({
+            from: '"Nguyễn Văn Hùng" <vanhungnvh1712004@gmail.com>',
+            to: 'hungnguyenninhbinh2004@gmail.com',
+            subject: 'Hỗ trợ sinh viên',
+            html: `
+                <h2>Thông tin sinh viên cần hỗ trợ</h2>
+                <p><strong>Họ tên:</strong> ${name}</p>
+                <p><strong>Số điện thoại:</strong> ${phone}</p>
+                <p><strong>Email:</strong> ${email}</p>
+                <p><strong>Tiêu đề:</strong> ${title}</p>
+                <p><strong>Nội dung:</strong> ${content}</p>
+            `
+        });
 
         const create = await modelContact.create({ name, phone, email, title, content });
 
