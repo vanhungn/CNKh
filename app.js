@@ -12,7 +12,7 @@ const document = require('./routes/document')
 const contact = require('./routes/contact')
 const news = require('./routes/news')
 const mark = require('./routes/mark')
-
+const { syncDriveToVectorDB } = require('./services/vectorService');
 const db = require('./config/db')
 var app = express();
 
@@ -60,6 +60,5 @@ app.use((err, req, res, next) => {
     message: err.message || 'Internal Server Error'
   });
 });
-
 
 module.exports = app;

@@ -109,7 +109,7 @@ const CreateNew = async (req, res) => {
         const { note, title, typeOf, content } = req.body;
         const file = req.file;
 
-        if (!content || !typeOf  || !title || !file) {
+        if (!content || !typeOf || !title || !file) {
             return res.status(400).json({ message: "not valid" });
         }
 
@@ -135,7 +135,7 @@ const CreateNew = async (req, res) => {
             typeOf,
             img: { etag: result.etag, url: result.secure_url },
             content: parsedContent,
-            note:note||"",
+            note: note || "",
             title
         });
 
@@ -211,7 +211,7 @@ const UpdateNews = async (req, res) => {
         const { _id } = req.params
         const { note, title, typeOf, content, img } = req.body
         const file = req.file
-        if (!_id || !content || !typeOf  || !title) {
+        if (!_id || !content || !typeOf || !title) {
             return res.status(400).json({ message: "not valid" });
         }
         const data = await modelNews.findById(_id)
@@ -220,7 +220,7 @@ const UpdateNews = async (req, res) => {
             const existing = await modelNews.findOne({ title, typeOf });
             if (existing) {
                 return res.status(406).json({ message: "valid" });
-            }   
+            }
         }
         let parsedContent = content;
         if (typeof content === "string") {
@@ -240,7 +240,7 @@ const UpdateNews = async (req, res) => {
         }
         await data.save()
         await modelNews.findByIdAndUpdate(_id, {
-            note:note||"", title, typeOf, content: parsedContent
+            note: note || "", title, typeOf, content: parsedContent
         }, { new: true })
         return res.status(200).json({
             message: "successfully"
@@ -267,5 +267,16 @@ const DeleteNew = async (req, res) => {
         return res.status(500).json({ error })
     }
 }
-
-module.exports = { uploadVideo, DeleteNew, UpdateNews, GetDetailNews, GetNews, UploadFile, FetchUrl, CreateNew };
+const GetTypeOf = async (req, res) => {
+    try {
+        const type = await modelNews.distinct('typeOf')
+        return res.status(200).json({
+            data: type
+        })
+    } catch (error) {
+        return res.status(500).json({
+            error
+        })
+    }
+}
+module.exports = { uploadVideo, DeleteNew, UpdateNews, GetDetailNews, GetNews, UploadFile, FetchUrl, CreateNew, GetTypeOf };

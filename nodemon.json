@@ -1,0 +1,15 @@
+{
+  "watch": [
+    "app.js",
+    "bin/",
+    "config/",
+    "controller/",
+    "routes/",
+    "services/"
+  ],
+  "ext": "js",
+  "ignore": [
+    "vector_store/**",
+    "*.pdf"
+  ]
+}

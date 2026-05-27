@@ -22,6 +22,7 @@ const upload = multer({
 
 
 router.get('/', news.GetNews)
+router.get('/typeof', news.GetTypeOf)
 router.get('/detail/:_id', news.GetDetailNews)
 router.post('/update/:_id', upload.single('image'), news.UpdateNews)
 router.post('/uploadFile', upload.single('image'), news.UploadFile)

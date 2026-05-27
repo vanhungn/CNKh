@@ -21,3 +21,4 @@ Thumbs.db
 # Build output (nếu có)
 dist
 build
+credentials.json
