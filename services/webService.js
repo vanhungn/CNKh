@@ -15,7 +15,7 @@ async function getDynamicNewsFromAPI(query) {
         // --- BƯỚC 1: LẤY DANH SÁCH CATEGORIES TỪ API MỚI ---
         if (!typesCache.data || (Date.now() - typesCache.lastFetched > CACHE_DURATION)) {
             // Thay URL dưới đây bằng endpoint API mới của bạn (ví dụ: /news/types)
-            const resTypes = await axios.get('https://cnkh.onrender.com/news/typeof', { timeout: 30000 });
+            const resTypes = await axios.get('https://cnkh.onrender.com/news/typeof', { timeout: 8000 });
 
             // Lấy mảng data từ API trả về
             let fetchedTypes = resTypes.data.data;
@@ -33,7 +33,7 @@ async function getDynamicNewsFromAPI(query) {
 
         // --- BƯỚC 3: LẤY VÀ LỌC BÀI VIẾT TỪ API NEWS ---
         if (!newsCache.data || (Date.now() - newsCache.lastFetched > CACHE_DURATION)) {
-            const response = await axios.get('https://cnkh.onrender.com/news', { timeout: 30000 });
+            const response = await axios.get(`https://cnkh.onrender.com/news?typeOf=${intent}`, { timeout: 8000 });
             newsCache = { data: response.data.data, lastFetched: Date.now() };
         }
         const articles = newsCache.data;
