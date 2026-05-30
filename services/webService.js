@@ -14,13 +14,10 @@ async function getDynamicNewsFromAPI(query) {
     try {
         // --- BƯỚC 1: LẤY DANH SÁCH CATEGORIES TỪ API MỚI ---
         if (!typesCache.data || (Date.now() - typesCache.lastFetched > CACHE_DURATION)) {
-            // Thay URL dưới đây bằng endpoint API mới của bạn (ví dụ: /news/types)
             const resTypes = await axios.get('https://cnkh.onrender.com/news/typeof', { timeout: 8000 });
 
-            // Lấy mảng data từ API trả về
             let fetchedTypes = resTypes.data.data;
 
-            // Đảm bảo luôn có 'generalNews' trong mảng để dự phòng
             if (!fetchedTypes.includes('generalNews')) {
                 fetchedTypes.push('generalNews');
             }
@@ -38,20 +35,32 @@ async function getDynamicNewsFromAPI(query) {
         }
         const articles = newsCache.data;
 
-        // Lọc bài viết theo intent AI vừa trả ra
         const filtered = intent === 'generalNews'
             ? articles.slice(0, 3)
             : articles.filter(a => a.typeOf === intent);
 
-        // Xử lý trường hợp không có bài viết nào
         if (filtered.length === 0) return "[TIN TỨC]: Hiện tại chưa có bài viết nào thuộc chủ đề này.";
 
-        // --- BƯỚC 4: FORMAT KẾT QUẢ TRẢ VỀ ---
-        return `[TIN TỨC]:\n` + filtered.slice(0, 3).map(a => `Tiêu đề: ${a.title}\nNội dung: ${parseEditorBlocks(a.content?.blocks)}`).join("\n---\n");
+        // --- BƯỚC 4: FORMAT KẾT QUẢ TRẢ VỀ (CẬP NHẬT TẠI ĐÂY) ---
+        return `[TIN TỨC]:\n` + filtered.slice(0, 3).map(a => {
+            const viContent = parseEditorBlocks(a.content?.blocks);
+            const enContent = parseEditorBlocks(a.contentEN?.blocks); // Lấy thêm contentEN
+
+            // Xây dựng chuỗi kết quả có cả VI và EN
+            let resultString = `Tiêu đề: ${a.title}\nNội dung (VI): ${viContent}`;
+
+            // Nếu API có titleEN thì bạn có thể thêm: `\nTiêu đề (EN): ${a.titleEN}`
+            if (enContent) {
+                resultString += `\nNội dung (EN): ${enContent}`;
+            }
+
+            return resultString;
+        }).join("\n---\n");
 
     } catch (error) {
         console.error("Lỗi fetch tin tức:", error);
         return "";
     }
 }
+
 module.exports = { getDynamicNewsFromAPI };

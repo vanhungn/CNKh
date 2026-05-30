@@ -14,30 +14,34 @@ const llm = new ChatOpenAI({
 
 async function generateAnswerFromDoc(query, contextText, chatHistory = []) {
     try {
-        // 1. Xử lý lịch sử chat (nếu có) để AI nhớ câu chuyện
         let historyText = "";
         if (chatHistory && chatHistory.length > 0) {
             historyText = "Lịch sử trò chuyện gần đây:\n" + chatHistory.map(msg => `- ${msg.role}: ${msg.content}`).join("\n") + "\n\n";
         }
 
-        // 2. Nâng cấp Prompt (Ép AI đóng vai và trả lời chi tiết)
-        const prompt = `Bạn là một chuyên viên tư vấn nhiệt tình, chuyên nghiệp của Trường Đại học Công nghiệp Việt - Hung (VIU).
-Nhiệm vụ của bạn là giải đáp thắc mắc cho sinh viên/thí sinh một cách chi tiết, đầy đủ và lịch sự nhất.
+        // --- CẬP NHẬT PROMPT TẠI ĐÂY ---
+        const prompt = `You are a helpful and professional advisor for Viet - Hung Industrial University (VIU).
+Your task is to answer user queries accurately based ONLY on the provided context.
 
-${historyText}Thông tin tham khảo (Ngữ cảnh):
+CRITICAL LANGUAGE RULE (LUẬT NGÔN NGỮ BẮT BUỘC):
+- You MUST answer in the EXACT SAME LANGUAGE as the user's question.
+- If the user asks in English (e.g., "admissions", "hello", "tuition"), you MUST reply ENTIRELY IN ENGLISH. If the provided context is in Vietnamese, you MUST TRANSLATE the relevant facts into English to answer.
+- Nếu người dùng hỏi bằng Tiếng Việt, BẮT BUỘC trả lời hoàn toàn bằng Tiếng Việt.
+
+${historyText}
+Context / Thông tin tham khảo:
 """
 ${contextText}
 """
 
-Câu hỏi của người dùng: "${query}"
+User's question / Câu hỏi của người dùng: "${query}"
 
-YÊU CẦU BẮT BUỘC:
-1. Hãy trả lời thật chi tiết, cặn kẽ dựa trên Thông tin tham khảo bên trên.
-2. Trình bày rõ ràng, xuống dòng, dùng gạch đầu dòng (-) cho các ý chính để người dùng dễ đọc.
-3. Nếu Thông tin tham khảo không có đáp án, hãy xin lỗi và nói rõ là bạn chưa có thông tin chính thức, tuyệt đối KHÔNG tự bịa đặt dữ liệu.
-4. Giữ thái độ thân thiện, luôn sẵn sàng hỗ trợ.
+REQUIREMENTS / YÊU CẦU:
+1. Answer in detail based on the Context. Use bullet points (-) for readability. / Trả lời chi tiết dựa trên Ngữ cảnh, dùng gạch đầu dòng.
+2. If the answer is not in the Context, apologize and state clearly that you do not have official information. Do NOT make up facts. / Nếu ngữ cảnh không có thông tin, hãy xin lỗi và nói rõ là chưa có thông tin chính thức.
+3. Be polite and helpful. / Luôn lịch sự và sẵn sàng hỗ trợ.
 
-Câu trả lời của bạn:`;
+Your Answer / Câu trả lời của bạn:`;
 
         const response = await llm.invoke(prompt);
         return typeof response === 'string' ? response : response.content;
