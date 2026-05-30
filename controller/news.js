@@ -206,7 +206,7 @@ const GetDetailNews = async (req, res) => {
             return res.status(400).json({ message: "not valid" })
         }
         const data = await modelNews.findById(_id)
-        const dataSuggest = await modelNews.find({ typeOf: data.typeOf, _id: { $ne: _id } }).select(['title', 'img', 'note', 'createdAt']).skip(0).limit(3)
+        const dataSuggest = await modelNews.find({ typeOf: data.typeOf, _id: { $ne: _id } }).select(['title', 'titleEN', 'noteEN', 'img', 'note', 'createdAt']).skip(0).limit(3)
         return res.status(200).json({ data, dataSuggest })
     } catch (error) {
         return res.status(500).json({ error })
