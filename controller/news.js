@@ -5,6 +5,7 @@ const axios = require("axios");
 const os = require("os"); // Bạn thiếu import
 const modelNews = require("../modal/news")
 const isEqual = require('lodash.isequal')
+const translationQueue = require('../helps/translationQueue.js');
 require('dotenv').config()
 
 const UploadFile = async (req, res) => {
@@ -113,7 +114,6 @@ const CreateNew = async (req, res) => {
             return res.status(400).json({ message: "not valid" });
         }
 
-        // luôn parse nếu là string
         let parsedContent = content;
         if (typeof content === "string") {
             try {
@@ -128,10 +128,10 @@ const CreateNew = async (req, res) => {
         const existing = await modelNews.findOne({ title, typeOf });
         if (existing) {
             return res.status(406).json({ message: "valid" });
-
         }
 
-        await modelNews.create({
+        // 1. TẠO VÀ LƯU BÀI VIẾT (Tiếng Việt)
+        const newArticle = await modelNews.create({
             typeOf,
             img: { etag: result.etag, url: result.secure_url },
             content: parsedContent,
@@ -139,8 +139,14 @@ const CreateNew = async (req, res) => {
             title
         });
 
+        // 2. NÉM CẢ CONTENT, TITLE VÀ NOTE VÀO HÀNG ĐỢI
+        // Truyền thêm title và note để Queue tự lo phần còn lại
+        translationQueue.addJob(newArticle._id, parsedContent, title, note);
+
+        // 3. TRẢ KẾT QUẢ NGAY LẬP TỨC CHO FRONTEND
         return res.status(200).json({
-            message: "created successfully"
+            message: "created successfully",
+            articleId: newArticle._id
         });
 
     } catch (error) {
@@ -206,22 +212,32 @@ const GetDetailNews = async (req, res) => {
         return res.status(500).json({ error })
     }
 }
+// Thêm import này lên đầu file nếu chưa có
+// const translationQueue = require('../services/translationQueue');
+
 const UpdateNews = async (req, res) => {
     try {
-        const { _id } = req.params
-        const { note, title, typeOf, content, img } = req.body
-        const file = req.file
+        const { _id } = req.params;
+        const { note, title, typeOf, content, img } = req.body;
+        const file = req.file;
+
         if (!_id || !content || !typeOf || !title) {
             return res.status(400).json({ message: "not valid" });
         }
-        const data = await modelNews.findById(_id)
-        console.log(data.title !== title && data.typeOf !== typeOf)
-        if (data.title !== title || data.typeOf !== typeOf) {
+
+        // 1. LẤY DỮ LIỆU GỐC TỪ DATABASE RA ĐỂ ĐỐI CHIẾU
+        const oldData = await modelNews.findById(_id);
+        if (!oldData) {
+            return res.status(404).json({ message: "News not found" });
+        }
+
+        if (oldData.title !== title || oldData.typeOf !== typeOf) {
             const existing = await modelNews.findOne({ title, typeOf });
             if (existing) {
                 return res.status(406).json({ message: "valid" });
             }
         }
+
         let parsedContent = content;
         if (typeof content === "string") {
             try {
@@ -231,24 +247,60 @@ const UpdateNews = async (req, res) => {
             }
         }
 
-
+        // Xử lý ảnh
         if (file) {
             const result = await cloudinary.uploader.upload(file?.path);
-            data.img = { etag: result?.etag, url: result?.secure_url };
+            oldData.img = { etag: result?.etag, url: result?.secure_url };
         } else if (img) {
-            data.img = JSON.parse(img)
+            oldData.img = JSON.parse(img);
         }
-        await data.save()
-        await modelNews.findByIdAndUpdate(_id, {
-            note: note || "", title, typeOf, content: parsedContent
-        }, { new: true })
+
+        // =======================================================
+        // 2. LOGIC ĐỈNH CAO: TÌM RA ĐIỂM KHÁC BIỆT (DIFFING)
+        // =======================================================
+
+        // So sánh Title
+        const isTitleChanged = oldData.title !== title;
+
+        // So sánh Note (Chuẩn hóa null/undefined về chuỗi rỗng để so sánh)
+        const newNote = note || "";
+        const isNoteChanged = oldData.note !== newNote;
+
+        // So sánh Content (Dùng JSON.stringify để so sánh 2 khối Object Editor.js siêu nhanh)
+        const isContentChanged = JSON.stringify(oldData.content) !== JSON.stringify(parsedContent);
+
+        // =======================================================
+
+        // 3. CẬP NHẬT DATABASE (Chỉ cần 1 lệnh save là đủ cho toàn bộ, nhanh và tối ưu)
+        oldData.title = title;
+        oldData.typeOf = typeOf;
+        oldData.note = newNote;
+        oldData.content = parsedContent;
+        await oldData.save();
+
+        // 4. CHỈ GỬI NHỮNG TRƯỜNG BỊ THAY ĐỔI VÀO HÀNG ĐỢI
+        const contentToTranslate = isContentChanged ? parsedContent : null;
+        const titleToTranslate = isTitleChanged ? title : null;
+        const noteToTranslate = isNoteChanged ? newNote : null;
+
+        // Nếu có BẤT KỲ sự thay đổi nào về chữ thì mới gọi Queue
+        if (contentToTranslate || titleToTranslate || noteToTranslate) {
+            console.log(`♻️ Bài [${_id}] có thay đổi -> Gửi đi dịch ngầm: Content(${isContentChanged}) | Title(${isTitleChanged}) | Note(${isNoteChanged})`);
+            translationQueue.addJob(_id, contentToTranslate, titleToTranslate, noteToTranslate);
+        } else {
+            console.log(`⏩ Bài [${_id}] cập nhật nhưng không sửa chữ -> Bỏ qua dịch.`);
+        }
+
+        // 5. TRẢ VỀ FRONTEND NGAY LẬP TỨC
         return res.status(200).json({
             message: "successfully"
-        })
+        });
+
     } catch (error) {
+        console.error(error);
         return res.status(500).json({
-            message: error
-        })
+            message: error.message || "Lỗi server"
+        });
     }
 }
 const DeleteNew = async (req, res) => {

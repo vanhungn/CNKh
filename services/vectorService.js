@@ -1,5 +1,5 @@
 const { RecursiveCharacterTextSplitter } = require("@langchain/textsplitters");
-const { GoogleGenerativeAIEmbeddings } = require("@langchain/google-genai");
+const { OpenAIEmbeddings } = require("@langchain/openai"); // Thay đổi ở đây
 const { MongoDBAtlasVectorSearch } = require("@langchain/mongodb");
 const { MongoClient } = require("mongodb");
 const { downloadPDFsFromDrive } = require("./googleDriveService");
@@ -7,17 +7,24 @@ require('dotenv').config();
 
 // 1. CẤU HÌNH KẾT NỐI MONGODB & API NHÚNG
 const client = new MongoClient(process.env.MONGODB_URI);
-const db = client.db("chatbot_rag"); // Bạn có thể đổi tên DB tùy ý
+const db = client.db("chatbot_rag");
 
 // Tạo 2 collection: 1 lưu Vector văn bản, 1 lưu lịch sử file đã xử lý
 const collection = db.collection("documents");
 const trackingCollection = db.collection("processed_files");
 
-// Gọi API của Google Gemini để nhúng chữ thành số (Siêu nhẹ, không tốn RAM server)
-const embeddings = new GoogleGenerativeAIEmbeddings({
-    apiKey: process.env.GEMINI_API_KEY,
-    modelName: "gemini-embedding-001",
-    maxConcurrency: 5, // Chỉ gọi tối đa 5 request song song để không làm quá tải API
+// Sử dụng OpenAI Embeddings qua OpenRouter để băm và nhúng không lo giới hạn request
+const embeddings = new OpenAIEmbeddings({
+    openAIApiKey: process.env.OPENROUTER_API_KEY,
+    configuration: {
+        baseURL: "https://openrouter.ai/api/v1",
+        defaultHeaders: {
+            "HTTP-Referer": "http://localhost:3000", // OpenRouter đôi khi yêu cầu cái này
+            "X-Title": "NCKH_Bot"
+        }
+    },
+    modelName: "openai/text-embedding-3-small",
+    batchSize: 50, // QUAN TRỌNG NHẤT: Băm gói dữ liệu ra gửi từ từ để không bị ngợp server
     maxRetries: 3,
 });
 
@@ -48,19 +55,19 @@ async function syncDriveToVectorDB() {
         }
 
         console.log(`Đang băm nhỏ ${newDocs.length} file...`);
-        const splitter = new RecursiveCharacterTextSplitter({ chunkSize: 600, chunkOverlap: 100 });
+        const splitter = new RecursiveCharacterTextSplitter({ chunkSize: 1500, chunkOverlap: 200 });
         const chunks = await splitter.splitDocuments(newDocs);
 
-        console.log("Đang tạo Vector và lưu lên MongoDB Atlas...");
+        console.log("Đang tạo Vector OpenAI và lưu lên MongoDB Atlas...");
         await MongoDBAtlasVectorSearch.fromDocuments(chunks, embeddings, {
             collection: collection,
-            indexName: "vector_index", // Tên index bạn sẽ cấu hình trên MongoDB Atlas
+            indexName: "vector_index", // Tên index bạn vừa tạo thành công trên web
             textKey: "text",
             embeddingKey: "embedding",
         });
 
         await saveProcessedFileIds(newDocs.map(d => d.metadata.fileId));
-        console.log("✅ Cập nhật kiến thức cho AI thành công!");
+        console.log("✅ Cập nhật kiến thức cho AI thành công bằng OpenAI Embeddings!");
 
     } catch (error) {
         console.error("❌ Lỗi khi đồng bộ dữ liệu:", error);
@@ -78,7 +85,7 @@ async function searchVectorDB(query) {
             embeddingKey: "embedding",
         });
 
-        // Tìm 3 đoạn văn bản có độ tương đồng cao nhất với câu hỏi
+        // Tìm 5 đoạn văn bản có độ tương đồng cao nhất với câu hỏi
         const results = await vectorStore.similaritySearchWithScore(query, 5);
         return results.map(([doc, score]) => ({
             pageContent: doc.pageContent,
