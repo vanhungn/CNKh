@@ -12,6 +12,7 @@ const document = require('./routes/document')
 const contact = require('./routes/contact')
 const news = require('./routes/news')
 const mark = require('./routes/mark')
+const menu = require("./routes/menu")
 const { syncDriveToVectorDB } = require('./services/vectorService');
 const db = require('./config/db')
 var app = express();
@@ -48,7 +49,7 @@ app.use('/document', document)
 app.use('/contact', contact)
 app.use('/news', news)
 app.use('/mark', mark)
-
+app.use("/menu", menu)
 // catch 404 and forward to error handler
 app.use((req, res) => {
   res.status(404).json({ message: 'Not Found' });

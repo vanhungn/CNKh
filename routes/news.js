@@ -3,6 +3,7 @@ const multer = require('multer');
 const router = express.Router()
 const news = require('../controller/news')
 const path = require('path')
+const verifyToken = require("../middleware/verifyToken")
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'public/images');
@@ -24,10 +25,10 @@ const upload = multer({
 router.get('/', news.GetNews)
 router.get('/typeof', news.GetTypeOf)
 router.get('/detail/:_id', news.GetDetailNews)
-router.post('/update/:_id', upload.single('image'), news.UpdateNews)
-router.post('/uploadFile', upload.single('image'), news.UploadFile)
-router.post('/uploadVideo', upload.single('video'), news.uploadVideo)
-router.post("/fetchUrl", express.json(), news.FetchUrl);
-router.post('/create', upload.single('image'), news.CreateNew)
-router.delete('/delete/:_id', news.DeleteNew)
+router.post('/update/:_id', verifyToken, upload.single('image'), news.UpdateNews)
+router.post('/uploadFile', verifyToken, upload.single('image'), news.UploadFile)
+router.post('/uploadVideo', verifyToken, upload.single('video'), news.uploadVideo)
+router.post("/fetchUrl", verifyToken, express.json(), news.FetchUrl);
+router.post('/create', verifyToken, upload.single('image'), news.CreateNew)
+router.delete('/delete/:_id', verifyToken, news.DeleteNew)
 module.exports = router
