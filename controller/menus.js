@@ -2,7 +2,23 @@ const modelMenu = require("../modal/menu")
 
 const ListMenu = async (req, res) => {
     try {
-        const data = await modelMenu.find({})
+        const data = await modelMenu.aggregate([
+            { $sort: { location: 1 } },
+
+            { $unwind: { path: "$childrenMenu", preserveNullAndEmptyArrays: true } },
+
+            { $sort: { location: 1, "childrenMenu.locationChildrenMenu": 1 } },
+
+            {
+                $group: {
+                    _id: "$_id",
+                    titleMenu: { $first: "$titleMenu" },
+                    typeof: { $first: "$typeof" },
+                    location: { $first: "$location" },
+                    childrenMenu: { $push: "$childrenMenu" }
+                }
+            },
+        ])
         await res.status(200).json({
             data
         })
