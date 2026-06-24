@@ -3,22 +3,58 @@ const cloudinary = require('../config/cloudinaryConfig')
 const ListMenu = async (req, res) => {
     try {
         const data = await modelMenu.aggregate([
-            { $sort: { location: 1 } },
+            // Unwind menu để sort
+            { $unwind: { path: "$menu", preserveNullAndEmptyArrays: true } },
+            { $sort: { "menu.location": 1 } },
 
-            { $unwind: { path: "$childrenMenu", preserveNullAndEmptyArrays: true } },
+            // Unwind childrenMenu để sort
+            { $unwind: { path: "$menu.childrenMenu", preserveNullAndEmptyArrays: true } },
+            { $sort: { "menu.location": 1, "menu.childrenMenu.locationChildrenMenu": 1 } },
 
-            { $sort: { location: 1, "childrenMenu.locationChildrenMenu": 1 } },
-
+            // Group lại childrenMenu
             {
                 $group: {
-                    _id: "$_id",
-                    titleMenu: { $first: "$titleMenu" },
-                    typeof: { $first: "$typeof" },
-                    location: { $first: "$location" },
-                    childrenMenu: { $push: "$childrenMenu" }
+                    _id: { docId: "$_id", menuId: "$menu._id" },
+                    title: { $first: "$title" },
+                    logo: { $first: "$logo" },
+                    banner: { $first: "$banner" },
+                    titleMenu: { $first: "$menu.titleMenu" },
+                    type: { $first: "$menu.type" },
+                    location: { $first: "$menu.location" },
+                    childrenMenu: { $push: "$menu.childrenMenu" }
                 }
             },
-        ])
+
+            // Group lại menu
+            {
+                $group: {
+                    _id: "$_id.docId",
+                    title: { $first: "$title" },
+                    logo: { $first: "$logo" },
+                    banner: { $first: "$banner" },
+                    menu: {
+                        $push: {
+                            titleMenu: "$titleMenu",
+                            type: "$type",
+                            location: "$location",
+                            childrenMenu: "$childrenMenu"
+                        }
+                    }
+                }
+            },
+
+            // Sort banner theo locationBanner
+            {
+                $addFields: {
+                    banner: {
+                        $sortArray: { input: "$banner", sortBy: { locationBanner: 1 } }
+                    },
+                    menu: {
+                        $sortArray: { input: "$menu", sortBy: { location: 1 } }
+                    }
+                }
+            }
+        ]);
         await res.status(200).json({
             data
         })
