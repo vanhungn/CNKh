@@ -8,15 +8,24 @@ const ModelMenu = new schema({
         {
             titleMenu: String,
             typeof: String,
-            location:Int32,
-            childrenMenu:[
+            location: Int32,
+            childrenMenu: [
                 {
-                    titleChildrenMenu:String,
-                    typeofChildrenMenu:String,
-                    locationChildrenMenu:Int32,
+                    titleChildrenMenu: String,
+                    typeofChildrenMenu: String,
+                    locationChildrenMenu: Int32,
                 }
             ]
         }
+    ],
+    logo: String,
+    banner: [
+        {
+            img: String,
+            locationBanner: Int32
+
+        }
     ]
-},{timestamps:true},{collection:"menus"})
-module.exports = mongoose.model("menus",ModelMenu)
+
+}, { timestamps: true }, { collection: "menus" })
+module.exports = mongoose.model("menus", ModelMenu)
