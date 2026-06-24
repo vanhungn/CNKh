@@ -3,25 +3,47 @@ const cloudinary = require('../config/cloudinaryConfig')
 const ListMenu = async (req, res) => {
     try {
         const data = await modelMenu.aggregate([
-            // Unwind menu để sort
+            // Unwind menu
             { $unwind: { path: "$menu", preserveNullAndEmptyArrays: true } },
-            { $sort: { "menu.location": 1 } },
 
-            // Unwind childrenMenu để sort
-            { $unwind: { path: "$menu.childrenMenu", preserveNullAndEmptyArrays: true } },
-            { $sort: { "menu.location": 1, "menu.childrenMenu.locationChildrenMenu": 1 } },
+            // Unwind menu1
+            { $unwind: { path: "$menu.menu1", preserveNullAndEmptyArrays: true } },
+            { $sort: { "menu.menu1.location": 1 } },
 
-            // Group lại childrenMenu
+            // Unwind menu2
+            { $unwind: { path: "$menu.menu1.menu2", preserveNullAndEmptyArrays: true } },
+            { $sort: { "menu.menu1.location": 1, "menu.menu1.menu2.locationChildrenMenu": 1 } },
+
+            // Group lại menu2
             {
                 $group: {
-                    _id: { docId: "$_id", menuId: "$menu._id" },
-                    title: { $first: "$title" },
+                    _id: { docId: "$_id", menuId: "$menu._id", menu1Id: "$menu.menu1._id" },
                     logo: { $first: "$logo" },
                     banner: { $first: "$banner" },
-                    titleMenu: { $first: "$menu.titleMenu" },
-                    type: { $first: "$menu.type" },
-                    location: { $first: "$menu.location" },
-                    childrenMenu: { $push: "$menu.childrenMenu" }
+                    menuTitle: { $first: "$menu.title" },
+                    menuId: { $first: "$menu._id" },
+                    titleMenu: { $first: "$menu.menu1.titleMenu" },
+                    typeof: { $first: "$menu.menu1.typeof" },
+                    location: { $first: "$menu.menu1.location" },
+                    menu2: { $push: "$menu.menu1.menu2" }
+                }
+            },
+
+            // Group lại menu1
+            {
+                $group: {
+                    _id: { docId: "$_id.docId", menuId: "$menuId" },
+                    logo: { $first: "$logo" },
+                    banner: { $first: "$banner" },
+                    menuTitle: { $first: "$menuTitle" },
+                    menu1: {
+                        $push: {
+                            titleMenu: "$titleMenu",
+                            typeof: "$typeof",
+                            location: "$location",
+                            menu2: "$menu2"
+                        }
+                    }
                 }
             },
 
@@ -29,61 +51,62 @@ const ListMenu = async (req, res) => {
             {
                 $group: {
                     _id: "$_id.docId",
-                    title: { $first: "$title" },
                     logo: { $first: "$logo" },
                     banner: { $first: "$banner" },
                     menu: {
                         $push: {
-                            titleMenu: "$titleMenu",
-                            type: "$type",
-                            location: "$location",
-                            childrenMenu: "$childrenMenu"
+                            title: "$menuTitle",
+                            menu1: "$menu1"
                         }
                     }
                 }
             },
 
-            // Sort banner theo locationBanner
+            // Sort banner và menu1 theo location
             {
                 $addFields: {
                     banner: {
                         $sortArray: { input: "$banner", sortBy: { locationBanner: 1 } }
                     },
                     menu: {
-                        $sortArray: { input: "$menu", sortBy: { location: 1 } }
+                        $map: {
+                            input: "$menu",
+                            as: "m",
+                            in: {
+                                title: "$$m.title",
+                                menu1: {
+                                    $sortArray: { input: "$$m.menu1", sortBy: { location: 1 } }
+                                }
+                            }
+                        }
                     }
                 }
             }
         ]);
-        await res.status(200).json({
-            data
-        })
+
+        return res.status(200).json({ data });
+
     } catch (error) {
-        res.status(500).json({
-            message: error
-        })
+        res.status(500).json({ message: error.message });
     }
-}
+};
 const createMenu = async (req, res) => {
     try {
-        const { title, menu, locationBanner } = req.body;
-        const logo = req.files['logo']?.[0];
-        const banners = req.files['banner'];
+        const { menu, locationBanner } = req.body;
+        const logo = req.files?.['logo']?.[0];
+        const banners = req.files?.['banner'];
 
-        if (!title || !menu || !logo || !banners || banners.length <= 0 || !locationBanner) {
+        if (!menu || !logo || !banners || banners.length <= 0 || !locationBanner) {
             return res.status(400).json({ message: "Not valid" });
         }
 
-        // Parse menu và locationBanner vì gửi từ FormData
         const parsedMenu = JSON.parse(menu);
         const parsedLocations = JSON.parse(locationBanner);
 
-        // Upload logo
         const resultLogo = await cloudinary.uploader.upload(logo.path, {
             folder: "editorjs",
         });
 
-        // Upload banner
         const uploadPromises = banners.map((file, index) =>
             cloudinary.uploader.upload(file.path, { folder: "editorjs" })
                 .then(result => ({
@@ -94,13 +117,12 @@ const createMenu = async (req, res) => {
         const arrBanner = await Promise.all(uploadPromises);
 
         const create = await modelMenu.create({
-            title,
             menu: parsedMenu,
             logo: resultLogo.secure_url,
             banner: arrBanner
         });
 
-        return res.status(200).json({ message: "Successfully", data: create });
+        return res.status(201).json({ message: "Successfully", data: create });
 
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -108,7 +130,7 @@ const createMenu = async (req, res) => {
 };
 const UpdateMenu = async (req, res) => {
     try {
-        const { title, menu, locationBanner } = req.body;
+        const { menu, locationBanner } = req.body;
         const { id } = req.params;
         const logo = req.files?.['logo']?.[0];
         const banners = req.files?.['banner'];
@@ -119,13 +141,8 @@ const UpdateMenu = async (req, res) => {
 
         const updateData = {};
 
-        // Cập nhật title nếu có
-        if (title) updateData.title = title;
-
-        // Cập nhật menu nếu có
         if (menu) updateData.menu = JSON.parse(menu);
 
-        // Cập nhật logo nếu có file mới
         if (logo) {
             const resultLogo = await cloudinary.uploader.upload(logo.path, {
                 folder: "editorjs",
@@ -133,7 +150,6 @@ const UpdateMenu = async (req, res) => {
             updateData.logo = resultLogo.secure_url;
         }
 
-        // Cập nhật banner nếu có file mới
         if (banners && banners.length > 0) {
             const parsedLocations = locationBanner ? JSON.parse(locationBanner) : [];
             const uploadPromises = banners.map((file, index) =>

@@ -3,19 +3,24 @@ const mongoose = require("mongoose")
 const schema = mongoose.Schema
 
 const ModelMenu = new schema({
-    title: String,
     menu: [
         {
-            titleMenu: String,
-            typeof: String,
-            location: Int32,
-            childrenMenu: [
+            title: String,
+            menu1: [
                 {
-                    titleChildrenMenu: String,
-                    typeofChildrenMenu: String,
-                    locationChildrenMenu: Int32,
+                    titleMenu: String,
+                    typeof: String,
+                    location: Int32,
+                    menu2: [
+                        {
+                            titleChildrenMenu: String,
+                            typeofChildrenMenu: String,
+                            locationChildrenMenu: Int32,
+                        }
+                    ]
                 }
             ]
+
         }
     ],
     logo: String,
@@ -27,5 +32,5 @@ const ModelMenu = new schema({
         }
     ]
 
-}, { timestamps: true }, { collection: "menus" })
+}, { timestamps: true, collection: "menus" })
 module.exports = mongoose.model("menus", ModelMenu)
