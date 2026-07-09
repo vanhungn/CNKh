@@ -20,7 +20,7 @@ const upload = multer({
     storage: storage,
 });
 
-router.get("/", middleware, menu.ListMenu)
+router.get("/", menu.ListMenu)
 router.post("/create", middleware, upload.fields([
     { name: 'logo', maxCount: 1 },
     { name: 'banner', maxCount: 10 }

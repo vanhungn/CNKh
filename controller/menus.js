@@ -25,6 +25,7 @@ const ListMenu = async (req, res) => {
                     titleMenu: { $first: "$menu.menu1.titleMenu" },
                     typeof: { $first: "$menu.menu1.typeof" },
                     location: { $first: "$menu.menu1.location" },
+                    menuLocal: { $first: "$menu.local" },
                     menu2: { $push: "$menu.menu1.menu2" }
                 }
             },
@@ -36,6 +37,7 @@ const ListMenu = async (req, res) => {
                     logo: { $first: "$logo" },
                     banner: { $first: "$banner" },
                     menuTitle: { $first: "$menuTitle" },
+                    menuLocal: { $first: "$menuLocal" },  
                     menu1: {
                         $push: {
                             titleMenu: "$titleMenu",
@@ -56,28 +58,36 @@ const ListMenu = async (req, res) => {
                     menu: {
                         $push: {
                             title: "$menuTitle",
-                            menu1: "$menu1"
+                            local: "$menuLocal",
+                            menu1: "$menu1",
+                            
                         }
                     }
                 }
             },
 
-            // Sort banner và menu1 theo location
+            // Sort banner, menu (theo local) và menu1 (theo location)
             {
                 $addFields: {
                     banner: {
                         $sortArray: { input: "$banner", sortBy: { locationBanner: 1 } }
                     },
                     menu: {
-                        $map: {
-                            input: "$menu",
-                            as: "m",
-                            in: {
-                                title: "$$m.title",
-                                menu1: {
-                                    $sortArray: { input: "$$m.menu1", sortBy: { location: 1 } }
+                        $sortArray: {
+                            input: {
+                                $map: {
+                                    input: "$menu",
+                                    as: "m",
+                                    in: {
+                                        title: "$$m.title",
+                                        local: "$$m.local",
+                                        menu1: {
+                                            $sortArray: { input: "$$m.menu1", sortBy: { location: 1 } }
+                                        }
+                                    }
                                 }
-                            }
+                            },
+                            sortBy: { local: 1 }
                         }
                     }
                 }
