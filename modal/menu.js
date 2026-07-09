@@ -6,6 +6,7 @@ const ModelMenu = new schema({
     menu: [
         {
             title: String,
+            local:Int32,
             menu1: [
                 {
                     titleMenu: String,
