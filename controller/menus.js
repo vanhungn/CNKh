@@ -1,5 +1,6 @@
 const modelMenu = require("../modal/menu")
 const cloudinary = require('../config/cloudinaryConfig')
+const menuTranslationQueue = require('../helps/menuTranslationQueue');
 const ListMenu = async (req, res) => {
     try {
         const data = await modelMenu.aggregate([
@@ -8,11 +9,11 @@ const ListMenu = async (req, res) => {
 
             // Unwind menu1
             { $unwind: { path: "$menu.menu1", preserveNullAndEmptyArrays: true } },
-            { $sort: { "menu.menu1.location": 1 } },
+            { $sort: { "menu.local": 1, "menu.menu1.location": 1 } },
 
             // Unwind menu2
             { $unwind: { path: "$menu.menu1.menu2", preserveNullAndEmptyArrays: true } },
-            { $sort: { "menu.menu1.location": 1, "menu.menu1.menu2.locationChildrenMenu": 1 } },
+            { $sort: { "menu.local": 1, "menu.menu1.location": 1, "menu.menu1.menu2.locationChildrenMenu": 1 } },
 
             // Group lại menu2
             {
@@ -20,30 +21,59 @@ const ListMenu = async (req, res) => {
                     _id: { docId: "$_id", menuId: "$menu._id", menu1Id: "$menu.menu1._id" },
                     logo: { $first: "$logo" },
                     banner: { $first: "$banner" },
+
                     menuTitle: { $first: "$menu.title" },
-                    menuId: { $first: "$menu._id" },
+                    menuTitleEN: { $first: "$menu.titleEN" },
+                    menuLocal: { $first: "$menu.local" },
+
                     titleMenu: { $first: "$menu.menu1.titleMenu" },
+                    titleMenuEN: { $first: "$menu.menu1.titleMenuEN" },
                     typeof: { $first: "$menu.menu1.typeof" },
                     location: { $first: "$menu.menu1.location" },
-                    menuLocal: { $first: "$menu.local" },
-                    menu2: { $push: "$menu.menu1.menu2" }
+
+                    menu2: {
+                        $push: {
+                            $cond: [
+                                { $ifNull: ["$menu.menu1.menu2._id", false] },
+                                {
+                                    _id: "$menu.menu1.menu2._id",
+                                    titleChildrenMenu: "$menu.menu1.menu2.titleChildrenMenu",
+                                    titleChildrenMenuEN: "$menu.menu1.menu2.titleChildrenMenuEN",
+                                    typeofChildrenMenu: "$menu.menu1.menu2.typeofChildrenMenu",
+                                    locationChildrenMenu: "$menu.menu1.menu2.locationChildrenMenu"
+                                },
+                                "$$REMOVE" // Nếu menu1 không có menu2 nào (preserveNullAndEmptyArrays), không push item rác
+                            ]
+                        }
+                    }
                 }
             },
 
             // Group lại menu1
             {
                 $group: {
-                    _id: { docId: "$_id.docId", menuId: "$menuId" },
+                    _id: { docId: "$_id.docId", menuId: "$_id.menuId" },
                     logo: { $first: "$logo" },
                     banner: { $first: "$banner" },
+
                     menuTitle: { $first: "$menuTitle" },
-                    menuLocal: { $first: "$menuLocal" },  
+                    menuTitleEN: { $first: "$menuTitleEN" },
+                    menuLocal: { $first: "$menuLocal" },
+
                     menu1: {
                         $push: {
-                            titleMenu: "$titleMenu",
-                            typeof: "$typeof",
-                            location: "$location",
-                            menu2: "$menu2"
+                            $cond: [
+                                { $ifNull: ["$_id.menu1Id", false] },
+                                {
+                                    _id: "$_id.menu1Id",
+                                    titleMenu: "$titleMenu",
+                                    titleMenuEN: "$titleMenuEN",
+                                    typeof: "$typeof",
+                                    location: "$location",
+                                    menu2: "$menu2"
+                                },
+                                "$$REMOVE"
+                            ]
                         }
                     }
                 }
@@ -57,10 +87,17 @@ const ListMenu = async (req, res) => {
                     banner: { $first: "$banner" },
                     menu: {
                         $push: {
-                            title: "$menuTitle",
-                            local: "$menuLocal",
-                            menu1: "$menu1",
-                            
+                            $cond: [
+                                { $ifNull: ["$_id.menuId", false] },
+                                {
+                                    _id: "$_id.menuId",
+                                    title: "$menuTitle",
+                                    titleEN: "$menuTitleEN",
+                                    local: "$menuLocal",
+                                    menu1: "$menu1"
+                                },
+                                "$$REMOVE"
+                            ]
                         }
                     }
                 }
@@ -79,7 +116,9 @@ const ListMenu = async (req, res) => {
                                     input: "$menu",
                                     as: "m",
                                     in: {
+                                        _id: "$$m._id",
                                         title: "$$m.title",
+                                        titleEN: "$$m.titleEN",
                                         local: "$$m.local",
                                         menu1: {
                                             $sortArray: { input: "$$m.menu1", sortBy: { location: 1 } }
@@ -150,8 +189,14 @@ const UpdateMenu = async (req, res) => {
         }
 
         const updateData = {};
+        let oldMenu = null;
 
-        if (menu) updateData.menu = JSON.parse(menu);
+        if (menu) {
+            // Lấy menu CŨ trước khi ghi đè, để lát nữa so sánh title
+            const oldDoc = await modelMenu.findById(id).select('menu').lean();
+            oldMenu = oldDoc?.menu || [];
+            updateData.menu = JSON.parse(menu);
+        }
 
         if (logo) {
             const resultLogo = await cloudinary.uploader.upload(logo.path, {
@@ -176,6 +221,11 @@ const UpdateMenu = async (req, res) => {
 
         if (!update) {
             return res.status(404).json({ message: "Menu not found" });
+        }
+
+        // Bắn job dịch ngầm kèm bản cũ để so sánh, KHÔNG chờ (fire-and-forget)
+        if (updateData.menu) {
+            menuTranslationQueue.addJob(id, oldMenu, updateData.menu);
         }
 
         return res.status(200).json({ message: "Successfully", data: update });

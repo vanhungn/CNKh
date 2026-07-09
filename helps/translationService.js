@@ -229,6 +229,130 @@ async function translateTitleAndNote(title, note) {
         return null;
     }
 }
+async function translateMenuContentDiff(oldMenu, newMenu) {
+    if (!newMenu || !Array.isArray(newMenu)) return newMenu;
+
+    try {
+        let mergedMenu = JSON.parse(JSON.stringify(newMenu));
+        const safeOldMenu = Array.isArray(oldMenu) ? oldMenu : [];
+        let textsToTranslate = [];
+
+        const same = (a, b) =>
+            typeof a === 'string' && typeof b === 'string' && a.trim() === b.trim();
+
+        // Tìm theo _id thay vì index -> chính xác dù có thêm/xoá/đảo vị trí
+        const findById = (arr, id) => (arr || []).find(x => String(x._id) === String(id));
+
+        mergedMenu.forEach((m) => {
+            const old = m._id ? findById(safeOldMenu, m._id) : null;
+            if (old && same(old.title, m.title) && old.titleEN) {
+                m.titleEN = old.titleEN;
+            } else if (m.title && m.title.trim()) {
+                textsToTranslate.push({ id: `m_${m._id || Math.random()}`, text: m.title });
+            }
+
+            (m.menu1 || []).forEach((m1) => {
+                const old1 = m1._id ? findById(old?.menu1, m1._id) : null;
+                if (old1 && same(old1.titleMenu, m1.titleMenu) && old1.titleMenuEN) {
+                    m1.titleMenuEN = old1.titleMenuEN;
+                } else if (m1.titleMenu && m1.titleMenu.trim()) {
+                    textsToTranslate.push({ id: `m1_${m1._id || Math.random()}`, text: m1.titleMenu });
+                }
+
+                (m1.menu2 || []).forEach((m2) => {
+                    const old2 = m2._id ? findById(old1?.menu2, m2._id) : null;
+                    if (old2 && same(old2.titleChildrenMenu, m2.titleChildrenMenu) && old2.titleChildrenMenuEN) {
+                        m2.titleChildrenMenuEN = old2.titleChildrenMenuEN;
+                    } else if (m2.titleChildrenMenu && m2.titleChildrenMenu.trim()) {
+                        textsToTranslate.push({ id: `m2_${m2._id || Math.random()}`, text: m2.titleChildrenMenu });
+                    }
+                });
+            });
+        });
+
+        if (textsToTranslate.length === 0) {
+            console.log("✅ [Dịch ngầm Menu] Không có title nào thay đổi. Bỏ qua dịch, tiết kiệm token.");
+            return mergedMenu;
+        }
+
+        console.log(`   -> [Dịch ngầm Menu] Phát hiện ${textsToTranslate.length} title mới/thay đổi, cần dịch.`);
+
+        let allTranslatedItems = [];
+        const BATCH_SIZE = 12;
+
+        for (let i = 0; i < textsToTranslate.length; i += BATCH_SIZE) {
+            const batch = textsToTranslate.slice(i, i + BATCH_SIZE);
+            const partNum = Math.floor(i / BATCH_SIZE) + 1;
+            const totalParts = Math.ceil(textsToTranslate.length / BATCH_SIZE);
+
+            console.log(`   -> [Dịch ngầm Menu] Đang xử lý phần ${partNum}/${totalParts}...`);
+
+            let batchTranslatedArray = null;
+            let retryCount = 0;
+            const MAX_RETRIES = 2;
+
+            while (retryCount <= MAX_RETRIES && !batchTranslatedArray) {
+                try {
+                    const prompt = `Dịch trường "text" trong mảng JSON sau sang Tiếng Anh. Giữ nguyên "id".
+                    YÊU CẦU BẮT BUỘC ĐỂ HỆ THỐNG KHÔNG BỊ SẬP:
+                    1. CHỈ TRẢ VỀ MẢNG JSON, KHÔNG BỌC TRONG MARKDOWN.
+                    2. TẤT CẢ dấu ngoặc kép (") và dấu gạch chéo (\\) bên trong giá trị chuỗi phải được escape đúng chuẩn JSON.
+                    3. Ký tự xuống dòng thay bằng khoảng trắng hoặc \\n.
+                    4. Đây là tiêu đề menu điều hướng website, dịch ngắn gọn, đúng văn phong menu.
+                    Dữ liệu:
+                    ${JSON.stringify(batch)}`;
+
+                    const response = await llm.invoke(prompt);
+                    const resText = typeof response === 'string' ? response : response.content;
+
+                    const jsonMatch = resText.match(/\[[\s\S]*\]/);
+                    if (!jsonMatch) throw new Error("Không tìm thấy mảng JSON");
+
+                    let cleanJsonString = jsonMatch[0];
+                    cleanJsonString = cleanJsonString.replace(/,\s*([\]}])/g, '$1');
+                    cleanJsonString = cleanJsonString.replace(/[\u0000-\u001F]+/g, " ");
+
+                    batchTranslatedArray = JSON.parse(cleanJsonString);
+
+                } catch (parseError) {
+                    retryCount++;
+                    console.log(`      ⚠️ [Dịch ngầm Menu] Lỗi Parse JSON phần ${partNum}. Thử lại (Lần ${retryCount}/${MAX_RETRIES})...`);
+                    if (retryCount > MAX_RETRIES) throw new Error(`Hủy phần ${partNum} do lỗi AI: ${parseError.message}`);
+                    await sleep(1500);
+                }
+            }
+
+            if (batchTranslatedArray) {
+                allTranslatedItems = allTranslatedItems.concat(batchTranslatedArray);
+            }
+        }
+
+        const getTrans = (id) => {
+            const found = allTranslatedItems.find(item => item.id === id);
+            return found ? found.text : null;
+        };
+
+        mergedMenu.forEach((m) => {
+            const t = getTrans(`m_${m._id}`);
+            if (t) m.titleEN = t;
+
+            (m.menu1 || []).forEach((m1) => {
+                const t1 = getTrans(`m1_${m1._id}`);
+                if (t1) m1.titleMenuEN = t1;
+
+                (m1.menu2 || []).forEach((m2) => {
+                    const t2 = getTrans(`m2_${m2._id}`);
+                    if (t2) m2.titleChildrenMenuEN = t2;
+                });
+            });
+        });
+
+        return mergedMenu;
+    } catch (error) {
+        console.error("❌ Lỗi cấu trúc dịch Menu (diff):", error.message);
+        return null;
+    }
+}
 
 // Xuất bản 2 hàm xử lý cốt lõi
-module.exports = { translateEditorContent, translateTitleAndNote };
+module.exports = { translateEditorContent, translateTitleAndNote, translateMenuContentDiff };

@@ -6,15 +6,18 @@ const ModelMenu = new schema({
     menu: [
         {
             title: String,
-            local:Int32,
+            titleEN: String,
+            local: Int32,
             menu1: [
                 {
                     titleMenu: String,
+                    titleMenuEN: String,
                     typeof: String,
                     location: Int32,
                     menu2: [
                         {
                             titleChildrenMenu: String,
+                            titleChildrenMenuEN: String,
                             typeofChildrenMenu: String,
                             locationChildrenMenu: Int32,
                         }
