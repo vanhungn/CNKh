@@ -244,27 +244,38 @@ async function translateMenuContentDiff(oldMenu, newMenu) {
         const findById = (arr, id) => (arr || []).find(x => String(x._id) === String(id));
 
         mergedMenu.forEach((m) => {
+            // Tính key MỘT LẦN và lưu tạm vào item -> dùng lại y hệt lúc lấy kết quả về,
+            // tránh trường hợp Math.random() sinh ra 2 giá trị khác nhau ở 2 bước.
+            const mKey = m._id ? `m_${m._id}` : `m_r_${Math.random()}`;
+            m.__transKey = mKey;
+
             const old = m._id ? findById(safeOldMenu, m._id) : null;
             if (old && same(old.title, m.title) && old.titleEN) {
                 m.titleEN = old.titleEN;
             } else if (m.title && m.title.trim()) {
-                textsToTranslate.push({ id: `m_${m._id || Math.random()}`, text: m.title });
+                textsToTranslate.push({ id: mKey, text: m.title });
             }
 
             (m.menu1 || []).forEach((m1) => {
+                const m1Key = m1._id ? `m1_${m1._id}` : `m1_r_${Math.random()}`;
+                m1.__transKey = m1Key;
+
                 const old1 = m1._id ? findById(old?.menu1, m1._id) : null;
                 if (old1 && same(old1.titleMenu, m1.titleMenu) && old1.titleMenuEN) {
                     m1.titleMenuEN = old1.titleMenuEN;
                 } else if (m1.titleMenu && m1.titleMenu.trim()) {
-                    textsToTranslate.push({ id: `m1_${m1._id || Math.random()}`, text: m1.titleMenu });
+                    textsToTranslate.push({ id: m1Key, text: m1.titleMenu });
                 }
 
                 (m1.menu2 || []).forEach((m2) => {
+                    const m2Key = m2._id ? `m2_${m2._id}` : `m2_r_${Math.random()}`;
+                    m2.__transKey = m2Key;
+
                     const old2 = m2._id ? findById(old1?.menu2, m2._id) : null;
                     if (old2 && same(old2.titleChildrenMenu, m2.titleChildrenMenu) && old2.titleChildrenMenuEN) {
                         m2.titleChildrenMenuEN = old2.titleChildrenMenuEN;
                     } else if (m2.titleChildrenMenu && m2.titleChildrenMenu.trim()) {
-                        textsToTranslate.push({ id: `m2_${m2._id || Math.random()}`, text: m2.titleChildrenMenu });
+                        textsToTranslate.push({ id: m2Key, text: m2.titleChildrenMenu });
                     }
                 });
             });
@@ -272,6 +283,7 @@ async function translateMenuContentDiff(oldMenu, newMenu) {
 
         if (textsToTranslate.length === 0) {
             console.log("✅ [Dịch ngầm Menu] Không có title nào thay đổi. Bỏ qua dịch, tiết kiệm token.");
+            cleanupTransKeys(mergedMenu);
             return mergedMenu;
         }
 
@@ -333,25 +345,39 @@ async function translateMenuContentDiff(oldMenu, newMenu) {
         };
 
         mergedMenu.forEach((m) => {
-            const t = getTrans(`m_${m._id}`);
+            const t = getTrans(m.__transKey);
             if (t) m.titleEN = t;
 
             (m.menu1 || []).forEach((m1) => {
-                const t1 = getTrans(`m1_${m1._id}`);
+                const t1 = getTrans(m1.__transKey);
                 if (t1) m1.titleMenuEN = t1;
 
                 (m1.menu2 || []).forEach((m2) => {
-                    const t2 = getTrans(`m2_${m2._id}`);
+                    const t2 = getTrans(m2.__transKey);
                     if (t2) m2.titleChildrenMenuEN = t2;
                 });
             });
         });
 
+        cleanupTransKeys(mergedMenu);
         return mergedMenu;
     } catch (error) {
         console.error("❌ Lỗi cấu trúc dịch Menu (diff):", error.message);
         return null;
     }
+}
+
+// Xóa field tạm __transKey trước khi trả về, tránh lưu field rác vào MongoDB
+function cleanupTransKeys(mergedMenu) {
+    mergedMenu.forEach((m) => {
+        delete m.__transKey;
+        (m.menu1 || []).forEach((m1) => {
+            delete m1.__transKey;
+            (m1.menu2 || []).forEach((m2) => {
+                delete m2.__transKey;
+            });
+        });
+    });
 }
 
 // Xuất bản 2 hàm xử lý cốt lõi
