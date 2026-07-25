@@ -107,10 +107,10 @@ const uploadVideo = async (req, res) => {
 }
 const CreateNew = async (req, res) => {
     try {
-        const { note, title, typeOf, content } = req.body;
+        const { note, title, typeOf, content, kindOf } = req.body;
         const file = req.file;
 
-        if (!content || !typeOf || !title || !file) {
+        if (!content || !typeOf || !title || !file || !kindOf) {
             return res.status(400).json({ message: "not valid" });
         }
 
@@ -136,7 +136,8 @@ const CreateNew = async (req, res) => {
             img: { etag: result.etag, url: result.secure_url },
             content: parsedContent,
             note: note || "",
-            title
+            title,
+            kindOf
         });
 
         // 2. NÉM CẢ CONTENT, TITLE VÀ NOTE VÀO HÀNG ĐỢI
@@ -218,10 +219,10 @@ const GetDetailNews = async (req, res) => {
 const UpdateNews = async (req, res) => {
     try {
         const { _id } = req.params;
-        const { note, title, typeOf, content, img } = req.body;
+        const { note, title, typeOf, content, img, kindOf } = req.body;
         const file = req.file;
 
-        if (!_id || !content || !typeOf || !title) {
+        if (!_id || !content || !typeOf || !title || !kindOf) {
             return res.status(400).json({ message: "not valid" });
         }
 
@@ -276,6 +277,7 @@ const UpdateNews = async (req, res) => {
         oldData.typeOf = typeOf;
         oldData.note = newNote;
         oldData.content = parsedContent;
+        oldData.kindOf = kindOf;
         await oldData.save();
 
         // 4. CHỈ GỬI NHỮNG TRƯỜNG BỊ THAY ĐỔI VÀO HÀNG ĐỢI
@@ -331,4 +333,22 @@ const GetTypeOf = async (req, res) => {
         })
     }
 }
-module.exports = { uploadVideo, DeleteNew, UpdateNews, GetDetailNews, GetNews, UploadFile, FetchUrl, CreateNew, GetTypeOf };
+const updateKindOf = async (req, res) => {
+    try {
+        const { kind } = req.body
+        await modelNews.updateMany(
+            {},
+            {
+                $set: {
+                    kindOf: kind
+                }
+            }
+        );
+        return res.status(200).json({
+            m: "ok"
+        })
+    } catch (ex) {
+
+    }
+}
+module.exports = {updateKindOf, uploadVideo, DeleteNew, UpdateNews, GetDetailNews, GetNews, UploadFile, FetchUrl, CreateNew, GetTypeOf };

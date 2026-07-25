@@ -10,6 +10,7 @@ const modalNews = new Schema({
     img: { etag: String, url: String },
     content: {},
     contentEN: {},
+    kindOf: String
 }, { timestamps: true }, { collection: "news" })
 
 module.exports = mongoose.model('news', modalNews)

@@ -21,7 +21,7 @@ const upload = multer({
     storage: storage,
 });
 
-
+router.post("/kind",news.updateKindOf)
 router.get('/', news.GetNews)
 router.get('/typeof', news.GetTypeOf)
 router.get('/detail/:_id', news.GetDetailNews)
