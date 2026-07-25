@@ -179,10 +179,10 @@ const createMenu = async (req, res) => {
 };
 const UpdateMenu = async (req, res) => {
     try {
-        const { menu, locationBanner } = req.body;
+        const { menu, bannerMeta } = req.body; // đổi locationBanner -> bannerMeta
         const { id } = req.params;
         const logo = req.files?.['logo']?.[0];
-        const banners = req.files?.['banner'];
+        const newBannerFiles = req.files?.['banner'] || [];
 
         if (!id) {
             return res.status(400).json({ message: "ID is required" });
@@ -192,7 +192,6 @@ const UpdateMenu = async (req, res) => {
         let oldMenu = null;
 
         if (menu) {
-            // Lấy menu CŨ trước khi ghi đè, để lát nữa so sánh title
             const oldDoc = await modelMenu.findById(id).select('menu').lean();
             oldMenu = oldDoc?.menu || [];
             updateData.menu = JSON.parse(menu);
@@ -205,16 +204,27 @@ const UpdateMenu = async (req, res) => {
             updateData.logo = resultLogo.secure_url;
         }
 
-        if (banners && banners.length > 0) {
-            const parsedLocations = locationBanner ? JSON.parse(locationBanner) : [];
-            const uploadPromises = banners.map((file, index) =>
-                cloudinary.uploader.upload(file.path, { folder: "editorjs" })
-                    .then(result => ({
-                        img: result.secure_url,
-                        locationBanner: Number(parsedLocations[index]) || index + 1
-                    }))
+        if (bannerMeta) {
+            const parsedMeta = JSON.parse(bannerMeta);
+
+            // Upload song song CHỈ những file mới
+            const uploadedUrls = await Promise.all(
+                newBannerFiles.map(file =>
+                    cloudinary.uploader.upload(file.path, { folder: "editorjs" })
+                        .then(result => result.secure_url)
+                )
             );
-            updateData.banner = await Promise.all(uploadPromises);
+
+            let newFileIndex = 0;
+            updateData.banner = parsedMeta.map(item => {
+                if (item.type === "new") {
+                    const img = uploadedUrls[newFileIndex];
+                    newFileIndex++;
+                    return { img, locationBanner: item.locationBanner };
+                }
+                // existing -> giữ nguyên url cũ, không upload lại
+                return { img: item.img, locationBanner: item.locationBanner };
+            });
         }
 
         const update = await modelMenu.findByIdAndUpdate(id, updateData, { new: true });
@@ -223,7 +233,6 @@ const UpdateMenu = async (req, res) => {
             return res.status(404).json({ message: "Menu not found" });
         }
 
-        // Bắn job dịch ngầm kèm bản cũ để so sánh, KHÔNG chờ (fire-and-forget)
         if (updateData.menu) {
             menuTranslationQueue.addJob(id, oldMenu, updateData.menu);
         }
