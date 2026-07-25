@@ -5,26 +5,60 @@ const ListMenu = async (req, res) => {
     try {
         const data = await modelMenu.aggregate([
             // Unwind menu
-            { $unwind: { path: "$menu", preserveNullAndEmptyArrays: true } },
+            {
+                $unwind: {
+                    path: "$menu",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
 
             // Unwind menu1
-            { $unwind: { path: "$menu.menu1", preserveNullAndEmptyArrays: true } },
-            { $sort: { "menu.local": 1, "menu.menu1.location": 1 } },
+            {
+                $unwind: {
+                    path: "$menu.menu1",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $sort: {
+                    "menu.local": 1,
+                    "menu.menu1.location": 1
+                }
+            },
 
             // Unwind menu2
-            { $unwind: { path: "$menu.menu1.menu2", preserveNullAndEmptyArrays: true } },
-            { $sort: { "menu.local": 1, "menu.menu1.location": 1, "menu.menu1.menu2.locationChildrenMenu": 1 } },
+            {
+                $unwind: {
+                    path: "$menu.menu1.menu2",
+                    preserveNullAndEmptyArrays: true
+                }
+            },
+            {
+                $sort: {
+                    "menu.local": 1,
+                    "menu.menu1.location": 1,
+                    "menu.menu1.menu2.locationChildrenMenu": 1
+                }
+            },
 
-            // Group lại menu2
+            // =========================
+            // Group menu2
+            // =========================
             {
                 $group: {
-                    _id: { docId: "$_id", menuId: "$menu._id", menu1Id: "$menu.menu1._id" },
+                    _id: {
+                        docId: "$_id",
+                        menuId: "$menu._id",
+                        menu1Id: "$menu.menu1._id"
+                    },
+
                     logo: { $first: "$logo" },
                     banner: { $first: "$banner" },
 
                     menuTitle: { $first: "$menu.title" },
                     menuTitleEN: { $first: "$menu.titleEN" },
                     menuLocal: { $first: "$menu.local" },
+                    menuKindOf: { $first: "$menu.kindOf" },
 
                     titleMenu: { $first: "$menu.menu1.titleMenu" },
                     titleMenuEN: { $first: "$menu.menu1.titleMenuEN" },
@@ -42,23 +76,30 @@ const ListMenu = async (req, res) => {
                                     typeofChildrenMenu: "$menu.menu1.menu2.typeofChildrenMenu",
                                     locationChildrenMenu: "$menu.menu1.menu2.locationChildrenMenu"
                                 },
-                                "$$REMOVE" // Nếu menu1 không có menu2 nào (preserveNullAndEmptyArrays), không push item rác
+                                "$$REMOVE"
                             ]
                         }
                     }
                 }
             },
 
-            // Group lại menu1
+            // =========================
+            // Group menu1
+            // =========================
             {
                 $group: {
-                    _id: { docId: "$_id.docId", menuId: "$_id.menuId" },
+                    _id: {
+                        docId: "$_id.docId",
+                        menuId: "$_id.menuId"
+                    },
+
                     logo: { $first: "$logo" },
                     banner: { $first: "$banner" },
 
                     menuTitle: { $first: "$menuTitle" },
                     menuTitleEN: { $first: "$menuTitleEN" },
                     menuLocal: { $first: "$menuLocal" },
+                    menuKindOf: { $first: "$menuKindOf" },
 
                     menu1: {
                         $push: {
@@ -79,12 +120,16 @@ const ListMenu = async (req, res) => {
                 }
             },
 
-            // Group lại menu
+            // =========================
+            // Group menu
+            // =========================
             {
                 $group: {
                     _id: "$_id.docId",
+
                     logo: { $first: "$logo" },
                     banner: { $first: "$banner" },
+
                     menu: {
                         $push: {
                             $cond: [
@@ -94,6 +139,7 @@ const ListMenu = async (req, res) => {
                                     title: "$menuTitle",
                                     titleEN: "$menuTitleEN",
                                     local: "$menuLocal",
+                                    kindOf: "$menuKindOf",
                                     menu1: "$menu1"
                                 },
                                 "$$REMOVE"
@@ -103,12 +149,20 @@ const ListMenu = async (req, res) => {
                 }
             },
 
-            // Sort banner, menu (theo local) và menu1 (theo location)
+            // =========================
+            // Sort
+            // =========================
             {
                 $addFields: {
                     banner: {
-                        $sortArray: { input: "$banner", sortBy: { locationBanner: 1 } }
+                        $sortArray: {
+                            input: "$banner",
+                            sortBy: {
+                                locationBanner: 1
+                            }
+                        }
                     },
+
                     menu: {
                         $sortArray: {
                             input: {
@@ -120,23 +174,36 @@ const ListMenu = async (req, res) => {
                                         title: "$$m.title",
                                         titleEN: "$$m.titleEN",
                                         local: "$$m.local",
+                                        kindOf: "$$m.kindOf",
+
                                         menu1: {
-                                            $sortArray: { input: "$$m.menu1", sortBy: { location: 1 } }
+                                            $sortArray: {
+                                                input: "$$m.menu1",
+                                                sortBy: {
+                                                    location: 1
+                                                }
+                                            }
                                         }
                                     }
                                 }
                             },
-                            sortBy: { local: 1 }
+                            sortBy: {
+                                local: 1
+                            }
                         }
                     }
                 }
             }
         ]);
 
-        return res.status(200).json({ data });
+        return res.status(200).json({
+            data
+        });
 
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        return res.status(500).json({
+            message: error.message
+        });
     }
 };
 const createMenu = async (req, res) => {
