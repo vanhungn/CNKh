@@ -8,6 +8,7 @@ const ModelMenu = new schema({
             title: String,
             titleEN: String,
             local: Int32,
+            kindOf:String,
             menu1: [
                 {
                     titleMenu: String,
