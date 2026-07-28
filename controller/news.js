@@ -110,7 +110,7 @@ const CreateNew = async (req, res) => {
         const { note, title, typeOf, content, kindOf } = req.body;
         const file = req.file;
 
-        if (!content || !typeOf  || !file || !kindOf) {
+        if (!content || !typeOf   || !kindOf) {
             return res.status(400).json({ message: "not valid" });
         }
 
