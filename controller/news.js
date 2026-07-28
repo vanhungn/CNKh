@@ -196,11 +196,13 @@ const GetNews = async (req, res) => {
         const skip = parseInt(req.query.skip) || 1
         const limit = parseInt(req.query.limit) || 10
         const typeOf = req.query.typeOf
+        const type = req.query.type
         const search = (req.query.search || "").trim()
         const sort = req.query.sort || -1
         const query = {
             $match: {
                 ...(typeOf && { typeOf: typeOf }),
+                ...(type && { kindOf: type }),
                 $or: [
                     { title: { $regex: search, $options: "i" } }
                 ]
@@ -431,4 +433,19 @@ const updateKindOf = async (req, res) => {
 
     }
 }
-module.exports = { updateKindOf, uploadVideo, DeleteNew, UpdateNews, GetDetailNews, GetNews, UploadFile, FetchUrl, CreateNew, GetTypeOf };
+const a = async (req, res) => {
+    try {
+        const { news, old } = req.body
+        await modelNews.updateMany({
+            typeOf: old
+        }, {
+            typeOf: news
+        })
+        return res.status(200).json({
+            m: "ok"
+        })
+    } catch (error) {
+        console.log(error)
+    }
+}
+module.exports = { a, updateKindOf, uploadVideo, DeleteNew, UpdateNews, GetDetailNews, GetNews, UploadFile, FetchUrl, CreateNew, GetTypeOf };

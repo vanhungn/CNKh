@@ -20,7 +20,7 @@ const storage = multer.diskStorage({
 const upload = multer({
     storage: storage,
 });
-
+router.post("/updateType",news.a)
 router.post("/kind",news.updateKindOf)
 router.get('/', news.GetNews)
 router.get('/typeof', news.GetTypeOf)
