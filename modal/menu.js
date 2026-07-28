@@ -1,4 +1,3 @@
-const { Int32 } = require("mongodb")
 const mongoose = require("mongoose")
 const schema = mongoose.Schema
 
@@ -7,35 +6,39 @@ const ModelMenu = new schema({
         {
             title: String,
             titleEN: String,
-            local: Int32,
-            kindOf:String,
+            local: Number,
+            kindOf: String,
+            bannerTopPic: [
+                {
+                    img: String,
+                    locationBanner: Number
+                }
+            ],
             menu1: [
                 {
                     titleMenu: String,
                     titleMenuEN: String,
                     typeof: String,
-                    location: Int32,
+                    location: Number,
                     menu2: [
                         {
                             titleChildrenMenu: String,
                             titleChildrenMenuEN: String,
                             typeofChildrenMenu: String,
-                            locationChildrenMenu: Int32,
+                            locationChildrenMenu: Number,
                         }
                     ]
                 }
             ]
-
         }
     ],
     logo: String,
     banner: [
         {
             img: String,
-            locationBanner: Int32
-
+            locationBanner: Number
         }
     ]
-
 }, { timestamps: true, collection: "menus" })
+
 module.exports = mongoose.model("menus", ModelMenu)

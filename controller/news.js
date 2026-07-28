@@ -199,6 +199,8 @@ const GetNews = async (req, res) => {
         const type = req.query.type
         const search = (req.query.search || "").trim()
         const sort = req.query.sort || -1
+        
+
         const query = {
             $match: {
                 ...(typeOf && { typeOf: typeOf }),
@@ -222,8 +224,6 @@ const GetNews = async (req, res) => {
             acc[item.typeOf] = (acc[item.typeOf] || 0) + 1;
             return acc;
         }, {});
-
-        console.log(counts);
 
         return res.status(200).json({
             data,

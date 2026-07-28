@@ -3,6 +3,7 @@ const router = express.Router()
 const menu = require("../controller/menus")
 const middleware = require("../middleware/verifyToken")
 const multer = require('multer');
+
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'public/images');
@@ -21,14 +22,19 @@ const upload = multer({
 });
 
 router.get("/", menu.ListMenu)
-router.post("/create", upload.fields([
+
+router.post("/create", middleware, upload.fields([
     { name: 'logo', maxCount: 1 },
-    { name: 'banner', maxCount: 10 }
+    { name: 'banner', maxCount: 10 },
+    { name: 'menuBanner', maxCount: 50 } // banner con trong từng menu (bannerTopPic)
 ]), menu.createMenu)
+
 router.post("/update/:id", middleware, upload.fields([
     { name: 'logo', maxCount: 1 },
-    { name: 'banner', maxCount: 10 }
+    { name: 'banner', maxCount: 10 },
+    { name: 'menuBanner', maxCount: 50 } // banner con trong từng menu (bannerTopPic)
 ]), menu.UpdateMenu)
-router.delete("/delete/:id", middleware, menu.DeleteMenu)
-module.exports = router
 
+router.delete("/delete/:id", middleware, menu.DeleteMenu)
+
+module.exports = router
