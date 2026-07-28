@@ -110,7 +110,7 @@ const CreateNew = async (req, res) => {
         const { note, title, typeOf, content, kindOf } = req.body;
         const file = req.file;
 
-        if (!content || !typeOf || !title || !file || !kindOf) {
+        if (!content || !typeOf  || !file || !kindOf) {
             return res.status(400).json({ message: "not valid" });
         }
 
@@ -133,10 +133,10 @@ const CreateNew = async (req, res) => {
         // 1. TẠO VÀ LƯU BÀI VIẾT (Tiếng Việt)
         const newArticle = await modelNews.create({
             typeOf,
-            img: { etag: result.etag, url: result.secure_url },
+            img: { etag: result.etag, url: result.secure_url }||"",
             content: parsedContent,
             note: note || "",
-            title,
+            title:title||"",
             kindOf
         });
 
@@ -222,7 +222,7 @@ const UpdateNews = async (req, res) => {
         const { note, title, typeOf, content, img, kindOf } = req.body;
         const file = req.file;
 
-        if (!_id || !content || !typeOf || !title || !kindOf) {
+        if (!_id || !content || !typeOf  || !kindOf) {
             return res.status(400).json({ message: "not valid" });
         }
 
