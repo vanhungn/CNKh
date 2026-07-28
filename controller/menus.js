@@ -54,14 +54,12 @@ const ListMenu = async (req, res) => {
 
                     logo: { $first: "$logo" },
                     banner: { $first: "$banner" },
+                    bannerTopPic: { $first: "$bannerTopPic" }, // giờ là field cấp document
 
                     menuTitle: { $first: "$menu.title" },
                     menuTitleEN: { $first: "$menu.titleEN" },
                     menuLocal: { $first: "$menu.local" },
                     menuKindOf: { $first: "$menu.kindOf" },
-                    // bannerTopPic thuộc cấp "menu" (song song với title/local/kindOf),
-                    // không phụ thuộc menu1/menu2 nên lấy $first như các field cấp menu khác.
-                    menuBannerTopPic: { $first: "$menu.bannerTopPic" },
 
                     titleMenu: { $first: "$menu.menu1.titleMenu" },
                     titleMenuEN: { $first: "$menu.menu1.titleMenuEN" },
@@ -98,12 +96,12 @@ const ListMenu = async (req, res) => {
 
                     logo: { $first: "$logo" },
                     banner: { $first: "$banner" },
+                    bannerTopPic: { $first: "$bannerTopPic" },
 
                     menuTitle: { $first: "$menuTitle" },
                     menuTitleEN: { $first: "$menuTitleEN" },
                     menuLocal: { $first: "$menuLocal" },
                     menuKindOf: { $first: "$menuKindOf" },
-                    menuBannerTopPic: { $first: "$menuBannerTopPic" },
 
                     menu1: {
                         $push: {
@@ -125,7 +123,7 @@ const ListMenu = async (req, res) => {
             },
 
             // =========================
-            // Group menu
+            // Group menu (về lại cấp document)
             // =========================
             {
                 $group: {
@@ -133,6 +131,7 @@ const ListMenu = async (req, res) => {
 
                     logo: { $first: "$logo" },
                     banner: { $first: "$banner" },
+                    bannerTopPic: { $first: "$bannerTopPic" },
 
                     menu: {
                         $push: {
@@ -144,7 +143,6 @@ const ListMenu = async (req, res) => {
                                     titleEN: "$menuTitleEN",
                                     local: "$menuLocal",
                                     kindOf: "$menuKindOf",
-                                    bannerTopPic: "$menuBannerTopPic",
                                     menu1: "$menu1"
                                 },
                                 "$$REMOVE"
@@ -168,6 +166,25 @@ const ListMenu = async (req, res) => {
                         }
                     },
 
+                    // bannerTopPic: nhóm theo typeofTopPic, sort banner con trong mỗi nhóm
+                    bannerTopPic: {
+                        $map: {
+                            input: { $ifNull: ["$bannerTopPic", []] },
+                            as: "g",
+                            in: {
+                                typeofTopPic: "$$g.typeofTopPic",
+                                banner: {
+                                    $sortArray: {
+                                        input: { $ifNull: ["$$g.banner", []] },
+                                        sortBy: {
+                                            locationBanner: 1
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+
                     menu: {
                         $sortArray: {
                             input: {
@@ -180,17 +197,6 @@ const ListMenu = async (req, res) => {
                                         titleEN: "$$m.titleEN",
                                         local: "$$m.local",
                                         kindOf: "$$m.kindOf",
-
-                                        // Sắp xếp bannerTopPic của từng menu theo locationBanner,
-                                        // giống cách banner cấp document được sắp xếp phía trên.
-                                        bannerTopPic: {
-                                            $sortArray: {
-                                                input: { $ifNull: ["$$m.bannerTopPic", []] },
-                                                sortBy: {
-                                                    locationBanner: 1
-                                                }
-                                            }
-                                        },
 
                                         menu1: {
                                             $sortArray: {
@@ -224,10 +230,10 @@ const ListMenu = async (req, res) => {
 };
 const createMenu = async (req, res) => {
     try {
-        const { menu, locationBanner } = req.body;
+        const { menu, locationBanner, bannerTopPicMeta } = req.body;
         const logo = req.files?.['logo']?.[0];
         const banners = req.files?.['banner'];
-        const menuBannerFiles = req.files?.['menuBanner'] || []; // banner con trong từng menu
+        const newBannerTopPicFiles = req.files?.['bannerTopPic'] || [];
 
         if (!menu || !logo || !banners || banners.length <= 0 || !locationBanner) {
             return res.status(400).json({ message: "Not valid" });
@@ -236,12 +242,12 @@ const createMenu = async (req, res) => {
         const parsedMenu = JSON.parse(menu);
         const parsedLocations = JSON.parse(locationBanner);
 
-        // ===== Upload logo =====
+        // ===== Logo =====
         const resultLogo = await cloudinary.uploader.upload(logo.path, {
             folder: "editorjs",
         });
 
-        // ===== Upload banner cấp document =====
+        // ===== Banner cấp document =====
         const uploadPromises = banners.map((file, index) =>
             cloudinary.uploader.upload(file.path, { folder: "editorjs" })
                 .then(result => ({
@@ -251,30 +257,38 @@ const createMenu = async (req, res) => {
         );
         const arrBanner = await Promise.all(uploadPromises);
 
-        // ===== Upload banner con nằm trong từng menu (bannerTopPic) =====
-        const uploadedMenuBannerUrls = await Promise.all(
-            menuBannerFiles.map(file =>
-                cloudinary.uploader.upload(file.path, { folder: "editorjs" })
-                    .then(result => result.secure_url)
-            )
-        );
+        // ===== BannerTopPic cấp document (nhóm theo typeofTopPic) =====
+        let finalBannerTopPic = [];
+        if (bannerTopPicMeta) {
+            const parsedTopPicMeta = JSON.parse(bannerTopPicMeta);
 
-        // Map ngược url mới vào đúng vị trí trong parsedMenu
-        // (FE phải append file menuBanner theo đúng thứ tự duyệt menu -> bannerTopPic)
-        let bannerCursor = 0;
+            const uploadedTopPicUrls = await Promise.all(
+                newBannerTopPicFiles.map(file =>
+                    cloudinary.uploader.upload(file.path, { folder: "editorjs" })
+                        .then(result => result.secure_url)
+                )
+            );
+
+            let cursor = 0;
+            finalBannerTopPic = parsedTopPicMeta.map(group => ({
+                typeofTopPic: group.typeofTopPic,
+                banner: (group.banner || []).map(b => {
+                    if (b.type === "new") {
+                        const img = uploadedTopPicUrls[cursor];
+                        cursor++;
+                        return { img, locationBanner: b.locationBanner };
+                    }
+                    return { img: b.img, locationBanner: b.locationBanner };
+                })
+            }));
+        }
+
+        // ===== Menu (không còn bannerTopPic) =====
         const finalMenu = parsedMenu.map(m1 => ({
             title: m1.title,
             titleEN: m1.titleEN,
             local: m1.local,
             kindOf: m1.kindOf,
-            bannerTopPic: (m1.bannerTopPic || []).map(b => {
-                if (b.type === "new") {
-                    const img = uploadedMenuBannerUrls[bannerCursor];
-                    bannerCursor++;
-                    return { img, locationBanner: b.locationBanner };
-                }
-                return { img: b.img, locationBanner: b.locationBanner };
-            }),
             menu1: (m1.menu1 || []).map(m2 => ({
                 titleMenu: m2.titleMenu,
                 titleMenuEN: m2.titleMenuEN,
@@ -292,7 +306,8 @@ const createMenu = async (req, res) => {
         const create = await modelMenu.create({
             menu: finalMenu,
             logo: resultLogo.secure_url,
-            banner: arrBanner
+            banner: arrBanner,
+            bannerTopPic: finalBannerTopPic
         });
 
         return res.status(201).json({ message: "Successfully", data: create });
@@ -303,11 +318,11 @@ const createMenu = async (req, res) => {
 };
 const UpdateMenu = async (req, res) => {
     try {
-        const { menu, bannerMeta } = req.body;
+        const { menu, bannerMeta, bannerTopPicMeta } = req.body;
         const { id } = req.params;
         const logo = req.files?.['logo']?.[0];
         const newBannerFiles = req.files?.['banner'] || [];
-        const newMenuBannerFiles = req.files?.['menuBanner'] || [];
+        const newBannerTopPicFiles = req.files?.['bannerTopPic'] || [];
 
         if (!id) {
             return res.status(400).json({ message: "ID is required" });
@@ -346,36 +361,44 @@ const UpdateMenu = async (req, res) => {
             });
         }
 
-        // ===== Menu (kèm banner con bannerTopPic) =====
+        // ===== BannerTopPic cấp document (nhóm theo typeofTopPic) =====
+        if (bannerTopPicMeta) {
+            const parsedTopPicMeta = JSON.parse(bannerTopPicMeta);
+
+            const uploadedTopPicUrls = await Promise.all(
+                newBannerTopPicFiles.map(file =>
+                    cloudinary.uploader.upload(file.path, { folder: "editorjs" })
+                        .then(result => result.secure_url)
+                )
+            );
+
+            let cursor = 0;
+            updateData.bannerTopPic = parsedTopPicMeta.map(group => ({
+                typeofTopPic: group.typeofTopPic,
+                banner: (group.banner || []).map(b => {
+                    if (b.type === "new") {
+                        const img = uploadedTopPicUrls[cursor];
+                        cursor++;
+                        return { img, locationBanner: b.locationBanner };
+                    }
+                    return { img: b.img, locationBanner: b.locationBanner };
+                })
+            }));
+        }
+
+        // ===== Menu (không còn bannerTopPic) =====
         if (menu) {
             const oldDoc = await modelMenu.findById(id).select('menu').lean();
             oldMenu = oldDoc?.menu || [];
 
             const parsedMenu = JSON.parse(menu);
 
-            // Upload tất cả file banner con MỚI (gộp từ mọi menu, theo đúng thứ tự FE append)
-            const uploadedMenuBannerUrls = await Promise.all(
-                newMenuBannerFiles.map(file =>
-                    cloudinary.uploader.upload(file.path, { folder: "editorjs" })
-                        .then(result => result.secure_url)
-                )
-            );
-
-            let bannerCursor = 0;
             updateData.menu = parsedMenu.map(m1 => ({
                 ...(m1._id ? { _id: m1._id } : {}),
                 title: m1.title,
                 titleEN: m1.titleEN,
                 local: m1.local,
                 kindOf: m1.kindOf,
-                bannerTopPic: (m1.bannerTopPic || []).map(b => {
-                    if (b.type === "new") {
-                        const img = uploadedMenuBannerUrls[bannerCursor];
-                        bannerCursor++;
-                        return { img, locationBanner: b.locationBanner };
-                    }
-                    return { img: b.img, locationBanner: b.locationBanner };
-                }),
                 menu1: (m1.menu1 || []).map(m2 => ({
                     ...(m2._id ? { _id: m2._id } : {}),
                     titleMenu: m2.titleMenu,

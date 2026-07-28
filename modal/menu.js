@@ -8,12 +8,7 @@ const ModelMenu = new schema({
             titleEN: String,
             local: Number,
             kindOf: String,
-            bannerTopPic: [
-                {
-                    img: String,
-                    locationBanner: Number
-                }
-            ],
+
             menu1: [
                 {
                     titleMenu: String,
@@ -38,7 +33,18 @@ const ModelMenu = new schema({
             img: String,
             locationBanner: Number
         }
-    ]
+    ],
+    bannerTopPic: [
+        {
+            typeofTopPic: String,
+            banner: [
+                {
+                    img: String,
+                    locationBanner: Number
+                }
+            ],
+        }
+    ],
 }, { timestamps: true, collection: "menus" })
 
 module.exports = mongoose.model("menus", ModelMenu)

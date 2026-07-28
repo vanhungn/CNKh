@@ -23,16 +23,16 @@ const upload = multer({
 
 router.get("/", menu.ListMenu)
 
-router.post("/create", middleware, upload.fields([
+router.post("/create", upload.fields([
     { name: 'logo', maxCount: 1 },
     { name: 'banner', maxCount: 10 },
-    { name: 'menuBanner', maxCount: 50 } // banner con trong từng menu (bannerTopPic)
+    { name: 'bannerTopPic', maxCount: 50 }
 ]), menu.createMenu)
 
 router.post("/update/:id", middleware, upload.fields([
     { name: 'logo', maxCount: 1 },
     { name: 'banner', maxCount: 10 },
-    { name: 'menuBanner', maxCount: 50 } // banner con trong từng menu (bannerTopPic)
+    { name: 'bannerTopPic', maxCount: 50 }
 ]), menu.UpdateMenu)
 
 router.delete("/delete/:id", middleware, menu.DeleteMenu)
