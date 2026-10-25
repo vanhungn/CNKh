@@ -1,41 +1,44 @@
 // Không cần dotenv nữa
 const modalProblem = require('../modal/problem')
+// codeName trong LIST_LANGUAGE → language_id của Judge0 CE
+// Đối chiếu tại https://ce.judge0.com/languages
+const JUDGE0_LANG = {
+    cpp: 54, c: 50, python: 71, java: 62, javascript: 63, typescript: 74,
+    go: 60, rust: 73, csharp: 51, ruby: 72, php: 68, swift: 83, sql: 82,
+};
+
 const Lapcode = async (req, res) => {
     try {
-        const { script, language_id = 54, stdin = "" } = req.body;
+        const { script, language, stdin = "" } = req.body;
+        const language_id = JUDGE0_LANG[language];
+        if (!language_id) {
+            return res.status(400).json({ success: false, message: `Chưa hỗ trợ ngôn ngữ: ${language}` });
+        }
 
         const response = await fetch(
             "https://ce.judge0.com/submissions?base64_encoded=false&wait=true",
             {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/json"
-                },
-                body: JSON.stringify({
-                    source_code: script,
-                    language_id,
-                    stdin: stdin + "\n"
-                }),
+                headers: { "Content-Type": "application/json", Accept: "application/json" },
+                body: JSON.stringify({ source_code: script, language_id, stdin: stdin + "\n" }),
             }
         );
-
         const data = await response.json();
 
         return res.json({
             success: true,
-            output: data.stdout || "",
+            output: data.stdout || data.compile_output || data.stderr || data.message || "",
             stderr: data.stderr || "",
-            status: data.status?.description
+            compileOutput: data.compile_output || "",
+            status: data.status?.description,
+            time: data.time,
+            memory: data.memory,
         });
-
     } catch (error) {
-        return res.status(500).json({
-            success: false,
-            message: error.message
-        });
+        return res.status(500).json({ success: false, message: error.message });
     }
 };
+
 const CreatePractice = async (req, res) => {
     try {
         const { typeOf, title, statement, input, output, suggest } = req.body
