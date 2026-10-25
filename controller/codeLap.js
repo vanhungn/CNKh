@@ -7,30 +7,75 @@ const JUDGE0_LANG = {
     go: 60, rust: 73, csharp: 51, ruby: 72, php: 68, swift: 83, sql: 82,
 };
 
+const toB64 = (s) => Buffer.from(s ?? "", "utf-8").toString("base64");
+// Judge0 trả base64 có xuống dòng; byte lỗi sẽ thành ký tự thay thế thay vì làm hỏng JSON
+const fromB64 = (s) => (s ? Buffer.from(s, "base64").toString("utf-8") : "");
+
 const Lapcode = async (req, res) => {
     try {
         const { script, language, stdin = "" } = req.body;
+
+        if (!script || !script.trim()) {
+            return res.status(400).json({ success: false, message: "Thiếu code" });
+        }
+
         const language_id = JUDGE0_LANG[language];
         if (!language_id) {
             return res.status(400).json({ success: false, message: `Chưa hỗ trợ ngôn ngữ: ${language}` });
         }
 
         const response = await fetch(
-            "https://ce.judge0.com/submissions?base64_encoded=false&wait=true",
+            "https://ce.judge0.com/submissions?base64_encoded=true&wait=true",
             {
                 method: "POST",
                 headers: { "Content-Type": "application/json", Accept: "application/json" },
-                body: JSON.stringify({ source_code: script, language_id, stdin: stdin + "\n" }),
+                body: JSON.stringify({
+                    source_code: toB64(script),
+                    language_id,
+                    stdin: toB64(stdin + "\n"),
+                }),
             }
         );
-        const data = await response.json();
+
+        const raw = await response.text();
+        console.log("JUDGE0:", response.status, raw.slice(0, 500));   // xoá sau khi chạy ổn
+
+        let data;
+        try {
+            data = JSON.parse(raw);
+        } catch {
+            return res.status(502).json({
+                success: false,
+                message: `Judge0 trả dữ liệu lạ (HTTP ${response.status}): ${raw.slice(0, 300)}`,
+            });
+        }
+
+        if (!response.ok || !data.status) {
+            return res.json({
+                success: true,
+                ok: false,
+                output: "",
+                error: `Judge0 lỗi (HTTP ${response.status}): ${data.error || data.message || raw.slice(0, 300)}`,
+                status: "Judge0 Error",
+                time: null,
+                memory: null,
+            });
+        }
+
+        const stdout = fromB64(data.stdout);
+        const stderr = fromB64(data.stderr);
+        const compileOutput = fromB64(data.compile_output);
+        const message = fromB64(data.message);
+
+        const ok = data.status.id === 3; // 3 = Accepted
+        const errorText = compileOutput || stderr || message || data.status.description || "";
 
         return res.json({
             success: true,
-            output: data.stdout || data.compile_output || data.stderr || data.message || "",
-            stderr: data.stderr || "",
-            compileOutput: data.compile_output || "",
-            status: data.status?.description,
+            ok,
+            output: stdout,
+            error: ok ? "" : errorText,
+            status: data.status.description,
             time: data.time,
             memory: data.memory,
         });
