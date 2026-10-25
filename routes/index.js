@@ -6,6 +6,7 @@ const { MicrosoftLogin } = require('../controller/microsoft')
 const refreshToken = require("../helps/refreshToken")
 const chatBoxAi = require("../controller/chatController");
 const { analyzeCode } = require('../controller/analyzeController')
+const rateLimit = require('express-rate-limit')
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() });
 const analyzeLimiter = rateLimit({ windowMs: 60 * 1000, max: 5 })
