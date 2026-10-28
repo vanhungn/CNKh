@@ -6,7 +6,7 @@ const ConnectData = async () => {
         console.log("Connect success")
 
     } catch (error) {
-        console.log("can not connect")
+        console.log("can not connect", error)
     }
 }
 module.exports = ConnectData

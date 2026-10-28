@@ -48,6 +48,8 @@ const ocrPdfWithCanvas = async (filePath) => {
 };
 
 // ================= GOOGLE DRIVE SERVICE =================
+const FOLDER_ID = "1A4nU8hvFCz9Yf3ggbAGf-Zsk1rUGlEEb";
+
 const auth = new google.auth.GoogleAuth({
     keyFile: path.join(__dirname, "../credentials.json"),
     scopes: ["https://www.googleapis.com/auth/drive.readonly"]
@@ -55,7 +57,6 @@ const auth = new google.auth.GoogleAuth({
 const drive = google.drive({ version: "v3", auth });
 
 async function downloadPDFsFromDrive(processedFileIds = []) {
-    const FOLDER_ID = "1A4nU8hvFCz9Yf3ggbAGf-Zsk1rUGlEEb";
     try {
         const mimeTypes = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
         let q = `'${FOLDER_ID}' in parents and trashed = false and (${mimeTypes.map(m => `mimeType='${m}'`).join(" or ")})`;
@@ -100,4 +101,29 @@ async function downloadPDFsFromDrive(processedFileIds = []) {
     }
 }
 
-module.exports = { downloadPDFsFromDrive };
+// ================= STREAM FILE CHO NGƯỜI DÙNG XEM / TẢI =================
+async function streamDriveFile(fileId, res, { download = false } = {}) {
+    // 1. Lấy thông tin file và kiểm tra file có nằm trong thư mục cho phép
+    const meta = await drive.files.get({ fileId, fields: "name,mimeType,parents" });
+    const { name, mimeType, parents } = meta.data;
+
+    if (!parents || !parents.includes(FOLDER_ID)) {
+        const err = new Error("FORBIDDEN");
+        err.code = 403;
+        throw err;
+    }
+
+    // 2. Đặt header: inline = xem trên trình duyệt, attachment = tải về
+    res.setHeader("Content-Type", mimeType);
+    res.setHeader(
+        "Content-Disposition",
+        `${download ? "attachment" : "inline"}; filename*=UTF-8''${encodeURIComponent(name)}`
+    );
+
+    // 3. Stream file từ Drive về client
+    const stream = await drive.files.get({ fileId, alt: "media" }, { responseType: "stream" });
+    stream.data.on("error", () => res.end());
+    stream.data.pipe(res);
+}
+
+module.exports = { downloadPDFsFromDrive, streamDriveFile };

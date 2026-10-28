@@ -50,6 +50,7 @@ app.use('/contact', contact)
 app.use('/news', news)
 app.use('/mark', mark)
 app.use("/menu", menu)
+app.use("/api", require("./routes/fileRoutes"));
 // catch 404 and forward to error handler
 app.use((req, res) => {
   res.status(404).json({ message: 'Not Found' });

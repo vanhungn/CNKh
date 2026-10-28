@@ -25,12 +25,36 @@ async function handleChat(req, res) {
 
         if (combinedContext.trim() !== "") {
             const answer = await generateAnswerFromDoc(query, combinedContext, chatHistory);
-            return res.json({ success: true, source: sourceNames.join(" & "), answer, citations: driveResults.map(d => d.metadata.fileName) });
+
+            // Loại file trùng
+            const files = [];
+            const seen = new Set();
+            for (const d of driveResults) {
+                const m = d.metadata || {};
+                if (m.fileId && !seen.has(m.fileId)) {
+                    seen.add(m.fileId);
+                    files.push({
+                        fileId: m.fileId,
+                        fileName: m.fileName,
+                        viewUrl: `/api/files/${m.fileId}/view`,
+                        downloadUrl: `/api/files/${m.fileId}/download`
+                    });
+                }
+            }
+
+            return res.json({
+                success: true,
+                source: sourceNames.join(" & "),
+                answer,
+                citations: driveResults.map(d => d.metadata.fileName), // giữ nguyên
+                files // rỗng nếu không lấy từ Google Drive
+            });
         } else {
             const fallback = await generateFallbackAnswer(query, chatHistory);
             return res.json({ success: true, source: "fallback", answer: fallback });
         }
     } catch (error) {
+        console.error("Lỗi handleChat:", error);
         return res.status(500).json({ success: false, message: "Lỗi hệ thống" });
     }
 }
