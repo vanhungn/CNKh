@@ -15,6 +15,8 @@ const mark = require('./routes/mark')
 const menu = require("./routes/menu")
 const { syncDriveToVectorDB } = require('./services/vectorService');
 const db = require('./config/db')
+const dns = require('dns');
+dns.setServers(['8.8.8.8', '1.1.1.1']);
 var app = express();
 
 db()
