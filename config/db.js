@@ -1,7 +1,8 @@
 const mongoose = require('mongoose')
+require('dotenv').config()
 const ConnectData = async () => {
     try {
-        await mongoose.connect("mongodb+srv://hungnguyenninhbinh2004_db_user:wgi1ikeOGrzmCDPj@thuctap.gtxo4lu.mongodb.net/thucTap?appName=ThucTap")
+        await mongoose.connect(process.env.MONGODB_URI)
 
         console.log("Connect success")
 

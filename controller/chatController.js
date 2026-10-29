@@ -81,8 +81,8 @@ async function handleChat(req, res) {
                     success: true,
                     source: "Google Drive",
                     answer: text
-                        ? `Nội dung biểu mẫu "${best.fileName}":\n\n${text}\n\nBạn bấm Xem hoặc Tải xuống bên dưới để lấy file gốc.`
-                        : `Mình tìm thấy biểu mẫu "${best.fileName}". Bạn bấm Xem hoặc Tải xuống bên dưới nhé.`,
+                        ? `Nội dung biểu mẫu "${best.fileName}":\n\n${text}\n\nBạn bấm Tải xuống bên dưới để lấy file gốc.`
+                        : `Mình tìm thấy biểu mẫu "${best.fileName}". Bạn bấm Tải xuống bên dưới nhé.`,
                     citations: [best.fileName],
                     files: [best]
                 });

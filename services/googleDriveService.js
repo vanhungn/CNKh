@@ -6,6 +6,10 @@ const { createCanvas } = canvasPkg;
 const fs = require("fs");
 const path = require("path");
 const os = require("os");
+const mammoth = require("mammoth");
+
+const DOCX_MIME = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+const DOC_MIMES = [DOCX_MIME, "application/msword"]; // .docx và .doc
 
 // ================= POLYFILL & PDFJS =================
 global.Image = canvasPkg.Image;
@@ -50,15 +54,16 @@ const ocrPdfWithCanvas = async (filePath) => {
 // ================= GOOGLE DRIVE SERVICE =================
 const FOLDER_ID = "1A4nU8hvFCz9Yf3ggbAGf-Zsk1rUGlEEb";
 
+// Cần quyền đầy đủ để tạo bản sao tạm khi đổi Word -> PDF
 const auth = new google.auth.GoogleAuth({
     keyFile: path.join(__dirname, "../credentials.json"),
-    scopes: ["https://www.googleapis.com/auth/drive.readonly"]
+    scopes: ["https://www.googleapis.com/auth/drive"]
 });
 const drive = google.drive({ version: "v3", auth });
 
 async function downloadPDFsFromDrive(processedFileIds = []) {
     try {
-        const mimeTypes = ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
+        const mimeTypes = ["application/pdf", DOCX_MIME];
         let q = `'${FOLDER_ID}' in parents and trashed = false and (${mimeTypes.map(m => `mimeType='${m}'`).join(" or ")})`;
 
         const response = await drive.files.list({ q, fields: "files(id,name,mimeType)" });
@@ -101,9 +106,53 @@ async function downloadPDFsFromDrive(processedFileIds = []) {
     }
 }
 
+// ================= XEM WORD: chuyển sang PDF qua Google Docs =================
+async function streamWordAsPdf(fileId, name, res) {
+    let copyId;
+    try {
+        const copy = await drive.files.copy({
+            fileId,
+            requestBody: { name: `tmp_${fileId}`, mimeType: "application/vnd.google-apps.document" },
+            fields: "id",
+        });
+        copyId = copy.data.id;
+
+        const pdf = await drive.files.export(
+            { fileId: copyId, mimeType: "application/pdf" },
+            { responseType: "arraybuffer" }
+        );
+
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader(
+            "Content-Disposition",
+            `inline; filename*=UTF-8''${encodeURIComponent(name.replace(/\.docx?$/i, "") + ".pdf")}`
+        );
+        res.send(Buffer.from(pdf.data));
+    } finally {
+        if (copyId) await drive.files.delete({ fileId: copyId }).catch(() => { });
+    }
+}
+
+// Dự phòng: docx -> HTML bằng mammoth
+async function streamDocxAsHtml(fileId, name, res) {
+    const resp = await drive.files.get({ fileId, alt: "media" }, { responseType: "arraybuffer" });
+    const { value: html } = await mammoth.convertToHtml({ buffer: Buffer.from(resp.data) });
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.send(`<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>${name}</title>
+<style>
+  body { background:#e9e9e9; margin:0; padding:24px; }
+  .page { background:#fff; width:210mm; max-width:100%; margin:0 auto; padding:20mm; box-sizing:border-box;
+          font:13pt/1.5 "Times New Roman",serif; box-shadow:0 0 6px rgba(0,0,0,.25); }
+  p { margin:6px 0; }
+  table { border-collapse:collapse; width:100%; }
+  td, th { border:1px solid #000; padding:6px; vertical-align:top; }
+</style></head><body><div class="page">${html}</div></body></html>`);
+}
+
 // ================= STREAM FILE CHO NGƯỜI DÙNG XEM / TẢI =================
 async function streamDriveFile(fileId, res, { download = false } = {}) {
-    // 1. Lấy thông tin file và kiểm tra file có nằm trong thư mục cho phép
+    // 1. Lấy thông tin file và kiểm tra thư mục
     const meta = await drive.files.get({ fileId, fields: "name,mimeType,parents" });
     const { name, mimeType, parents } = meta.data;
 
@@ -113,15 +162,32 @@ async function streamDriveFile(fileId, res, { download = false } = {}) {
         throw err;
     }
 
-    // 2. Đặt header: inline = xem trên trình duyệt, attachment = tải về
-    res.setHeader("Content-Type", mimeType);
+    // 2. XEM file Word: đổi sang PDF; lỗi thì dự phòng bằng HTML
+    if (!download && DOC_MIMES.includes(mimeType)) {
+        try {
+            return await streamWordAsPdf(fileId, name, res);
+        } catch (e) {
+            console.error("⚠️ Không đổi được sang PDF:", e.code, e.message);
+            if (mimeType === DOCX_MIME && !res.headersSent) {
+                return streamDocxAsHtml(fileId, name, res);
+            }
+            throw e;
+        }
+    }
+
+    // 3. TẢI về, hoặc XEM các loại khác (PDF, ảnh...)
+    const isGoogleDoc = mimeType.startsWith("application/vnd.google-apps.");
+    const stream = isGoogleDoc
+        ? await drive.files.export({ fileId, mimeType: "application/pdf" }, { responseType: "stream" })
+        : await drive.files.get({ fileId, alt: "media" }, { responseType: "stream" });
+
+    const outName = isGoogleDoc ? `${name}.pdf` : name;
+    res.setHeader("Content-Type", isGoogleDoc ? "application/pdf" : mimeType);
     res.setHeader(
         "Content-Disposition",
-        `${download ? "attachment" : "inline"}; filename*=UTF-8''${encodeURIComponent(name)}`
+        `${download ? "attachment" : "inline"}; filename*=UTF-8''${encodeURIComponent(outName)}`
     );
 
-    // 3. Stream file từ Drive về client
-    const stream = await drive.files.get({ fileId, alt: "media" }, { responseType: "stream" });
     stream.data.on("error", () => res.end());
     stream.data.pipe(res);
 }
